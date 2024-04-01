@@ -1,0 +1,33 @@
+---
+fontsize: 12pt
+geometry: "driver=luatex,paper=letterpaper,hmargin=2.0cm,vmargin=1.5cm,headsep=0.75cm,headheight=0.75cm,includeheadfoot"
+output: 
+  pdf_document: 
+    includes:
+      in_header: header.tex
+    latex_engine: lualatex
+    keep_tex: true
+    extra_dependencies: ['enumitem', 'amsmath', 'amssymb']
+---
+\begin{titlepage}
+        \centering
+        \mbox{}
+        \vfill
+        {\Huge Handwritten Digit Recognition\\
+        with Neural Networks\par}
+        \vspace{2\baselineskip}
+        {\large Tanner Giddings\\
+        Mairi Hallman\\
+        Victor Matyiku\\
+        Mitchell Whalen\par}
+        \vspace{4\baselineskip}
+        {Statistical Machine Learning\\
+        Winter 2024\par}
+        \vspace{\baselineskip}
+        {Universit\symbol{"00E9} d'Ottawa\\
+        University of Ottawa\par}
+        \vspace{2\baselineskip}
+        \today
+\end{titlepage}
+
+blah
