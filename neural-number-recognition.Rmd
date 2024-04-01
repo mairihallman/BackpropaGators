@@ -29,5 +29,17 @@ output:
         \vspace{2\baselineskip}
         \today
 \end{titlepage}
-
 blah
+```{r 'import-packages', echo = FALSE}
+library(tinytex)
+library(reticulate)
+```
+```{r 'chunk-settings', echo = FALSE}
+#knitr::opts_chunk$set()
+```
+```{python 'import-data'}
+import pathlib
+pathlib.Path().resolve()
+import scipy.io
+M = scipy.io.loadmat("data/mnist_all.mat")
+```
