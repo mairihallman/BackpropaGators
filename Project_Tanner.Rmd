@@ -1,0 +1,36 @@
+---
+title: "Final Project - MAT4373"
+author: "Tanner Giddings"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{python}
+!pip install matplotlib
+!pip install pandas
+```
+
+
+**Question 1**
+
+```{python}
+import matplotlib.pyplot as plt
+from scipy.io import loadmat
+import pandas as pd
+
+data = loadmat('mnist_all.mat')
+data.keys()
+```
+
+```{python}
+fig, ax = plt.subplots(2, 5)
+for i in range(10):
+  ax[i % 2][i % 5].imshow(data[f"train{i}"][0].reshape((28,28)), cmap='gray')
+  ax[i % 2][i % 5].set_title(f"Number {i}")
+plt.show()
+```
+
