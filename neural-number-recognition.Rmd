@@ -29,7 +29,6 @@ output:
         \vspace{2\baselineskip}
         \today
 \end{titlepage}
-blah
 ```{r 'import-packages', echo = FALSE}
 library(tinytex)
 library(reticulate)
@@ -38,8 +37,13 @@ library(reticulate)
 #knitr::opts_chunk$set()
 ```
 ```{python 'import-data'}
-import pathlib
-pathlib.Path().resolve()
-import scipy.io
+import scipy, numpy
 M = scipy.io.loadmat("data/mnist_all.mat")
+batches = list(M)
+for name in batches:
+  if "_" in name:
+    batches.remove(name)
+batches.remove("__version__")
+for name in batches:
+  M[name] = numpy.divide(M[name], 255.0)
 ```
