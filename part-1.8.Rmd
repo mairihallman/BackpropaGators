@@ -1,0 +1,84 @@
+---
+title: "Part 1.8"
+author: "Mairi Hallman"
+date: "2024-04-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reticulate)
+use_condaenv("4373-project",require=TRUE)
+```
+
+```{python}
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.layers import Dense, Flatten, Input
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.models import Sequential
+from tensorflow.random import set_seed
+```
+```{python}
+set_seed(1)
+```
+```{python}
+# load dataset
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+```
+```{python}
+#split the training set into a new training set and a validation set
+n_val = int(len(x_train)*0.1)
+
+x_val = x_train[:n_val]
+y_val = y_train[:n_val]
+
+x_train_nv = x_train[n_val:]
+y_train_nv = y_train[n_val:]
+```
+```{python}
+def my_model_mbgd(shape, n, classes, x_train, y_train, epochs, batch_size, x_val, y_val):
+    """
+    Initializes, compiles, and fits a model.
+    
+    Parameters:
+    - shape: tuple, the shape of the input images ((28,28) for minst)
+    - n: int, the number of nodes in the hidden layer
+    - classes: int, the number of classes (10 for minst)
+    - x_train: numpy.ndarray
+    - y_train: numpy.ndarray
+    - epochs: int
+    - batch_size: int
+    - x_val: numpy.ndarray
+    - y_val: numpy.ndarray
+      
+    Returns:
+    - The fitted model.
+    """
+    
+    # initialize model
+    model = Sequential([
+        Input(shape=shape),
+        Flatten(),
+        Dense(n, activation="tanh"), # new layer
+        Dense(classes)
+    ])
+
+    # compile model
+    model.compile(optimizer="adam",
+                  loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
+                  metrics=["accuracy"]
+                 )
+
+    # fit model
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    
+    return history
+```
+```{python}
+model = my_model_mbgd(shape=(28,28),n=300,classes=10,x_train=x_train_nv,y_train =y_train_nv,epochs=10,batch_size=50,x_val=x_val,y_val=y_val)
+```
