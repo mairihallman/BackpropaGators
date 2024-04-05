@@ -7,20 +7,18 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 library(reticulate)
 use_condaenv("4373-project",require=TRUE)
 ```
 
 ```{python}
+import matplotlib.pyplot as plt
+import numpy as np
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import Dense, Flatten, Input
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import SGD
 from tensorflow.random import set_seed
 ```
 ```{python}
@@ -41,7 +39,7 @@ x_train_nv = x_train[n_val:]
 y_train_nv = y_train[n_val:]
 ```
 ```{python}
-def my_model_mbgd(shape, n, classes, x_train, y_train, epochs, batch_size, x_val, y_val):
+def my_model_mbgd(shape, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
     """
     Initializes, compiles, and fits a model.
     
@@ -49,6 +47,7 @@ def my_model_mbgd(shape, n, classes, x_train, y_train, epochs, batch_size, x_val
     - shape: tuple, the shape of the input images ((28,28) for minst)
     - n: int, the number of nodes in the hidden layer
     - classes: int, the number of classes (10 for minst)
+    - learning_rate: float, the learning rate
     - x_train: numpy.ndarray
     - y_train: numpy.ndarray
     - epochs: int
@@ -57,7 +56,7 @@ def my_model_mbgd(shape, n, classes, x_train, y_train, epochs, batch_size, x_val
     - y_val: numpy.ndarray
       
     Returns:
-    - The fitted model.
+    - The fitted model and the history object.
     """
     
     # initialize model
@@ -69,7 +68,7 @@ def my_model_mbgd(shape, n, classes, x_train, y_train, epochs, batch_size, x_val
     ])
 
     # compile model
-    model.compile(optimizer="adam",
+    model.compile(optimizer=SGD(learning_rate=learning_rate),
                   loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
                   metrics=["accuracy"]
                  )
@@ -77,8 +76,70 @@ def my_model_mbgd(shape, n, classes, x_train, y_train, epochs, batch_size, x_val
     # fit model
     history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
     
-    return history
+    return model, history
 ```
 ```{python}
-model = my_model_mbgd(shape=(28,28),n=300,classes=10,x_train=x_train_nv,y_train =y_train_nv,epochs=10,batch_size=50,x_val=x_val,y_val=y_val)
+model, history = my_model_mbgd(shape=(28,28),n=300,classes=10,learning_rate=0.01,x_train=x_train_nv,y_train =y_train_nv,epochs=50,batch_size=50,x_val=x_val,y_val=y_val)
+```
+```{python}
+test_loss, test_acc = model.evaluate(x_test, y_test)
+```
+
+
+```{python}
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+epochs_range = range(1, len(acc) + 1)
+
+plt.figure(figsize=(14, 5))
+
+# Plot training and validation accuracy per epoch
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.legend()
+
+# Plot training and validation loss per epoch
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Cross-Entropy Loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+
+plt.show()
+```
+```{python}
+predictions = model.predict(x_test)
+pred_class = np.argmax(predictions, axis=1)
+```
+```{python}
+pred_correct = np.where(pred_class == y_test)[0]
+pred_incorrect = np.where(pred_class != y_test)[0]
+```
+```{python}
+plt.figure(figsize=(10, 5))
+for i, correct in enumerate(pred_correct[:20]):
+    plt.subplot(4, 5, i + 1)
+    plt.imshow(x_test[correct].reshape(28, 28), cmap='gray')
+    plt.title(f"Pred: {pred_class[correct]}, True: {y_test[correct]}")
+    plt.axis('off')
+plt.tight_layout()
+plt.show()
+```
+```{python}
+plt.figure(figsize=(10, 5))
+for i, incorrect in enumerate(pred_incorrect[:10]):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(x_test[incorrect].reshape(28, 28), cmap='gray')
+    plt.title(f"Pred: {pred_class[incorrect]}, True: {y_test[incorrect]}")
+    plt.axis('off')
+plt.tight_layout()
+plt.show()
 ```
