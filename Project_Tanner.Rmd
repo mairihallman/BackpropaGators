@@ -55,7 +55,6 @@ data_clean
 ```
 
 ```{python}
-from tqdm import tqdm
 def clean(D):
   d = {}
   for i in range(0, 10):
@@ -70,6 +69,7 @@ data_clean = clean(data)
 
 ```{python}
 import numpy as np
+from math import log
 
 def softmax(x):
   e_x = np.exp(x)
@@ -83,6 +83,9 @@ def forward(X, w, b):
 
 def predict(X, w, b):
   return softmax(forward(X, w, b))
+
+def cross_entropy(y, p):
+  return sum([-y[i] * log(p[i]) - (1-y[i]) * log(1-p[i])])
 
 w1 = np.random.rand(28*28, 9)
 b1 = np.random.rand(9)
@@ -115,13 +118,84 @@ Since $p_i$ is the output of the softmax function, $p_i = \frac{e^{z_i}}{\sum_{j
 #This is the implementation of the gradient of the cost function for b (db) and w (dw)
 def backprop(y, p, xi):
   db = y-p
-  dw = np.matmul(db, xi.T)
+  dw = np.matmul(np.array([xi]).T, np.array([db]))
   return db, dw
 
 def update_parameters(w, b, db, dw, alpha):
   w = w - alpha * dw
   b = b - alpha * db
   return w, b
-  
 ```
 
+
+**Question 4**
+
+```{python}
+def create_dataframe(data, name):
+    df = []
+    for i in range(10):
+        cur_df = pd.DataFrame({"pixel" + str(j) : [elem[j] / 255 for elem in data[name+str(i)]] for j in range(784)})
+        cur_df['Y'] = [i for j in range(len(cur_df))]
+        df.append(cur_df)
+    return pd.concat(df).reset_index(drop=True)                                     
+
+train = create_dataframe(data, 'train')
+test = create_dataframe(data, 'test')
+```
+
+```{python}
+def one_hot(x):
+  return np.array([int(i == x) for i in range(10)])
+
+def numerical_approximation_W(x, w, b, y, h):
+  a, b = np.shape(w)
+  approximations = [[0 for i in range(b)] for i in range(a)]
+  for i in range(a):
+    for j in range(b):
+      h_matrix = np.zeros(np.shape(w))
+      h_matrix[i][j] += h
+      approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
+  return approximations
+
+def numerical_approximation_b(x, w, b, y, h):
+  return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
+
+def run(X, Y, h=0.01, iterations = 100):
+  w = np.random.rand(28*28, 10)
+  b = np.random.rand(10)
+  current_dw = 0
+  current_db = 0
+  batch_counter = 0
+  estimation_vs_numerical = {'w' : [], 'b' : []}
+  
+  for i in range(iterations):
+    x_i = X.loc[i].to_numpy()
+    y_pred = predict(x_i, w, b)
+    y = one_hot(Y[i])
+    db, dw = backprop(y, y_pred, x_i)
+    estimation_vs_numerical['w'].append((dw - numerical_approximation_W(x_i, w, b, y, h)).flatten())
+    estimation_vs_numerical['b'].append((db - numerical_approximation_b(x_i, w, b, y, h)).flatten())
+    w, b = update_parameters(w, b, db, dw, 0.000001)
+  return estimation_vs_numerical
+    
+    
+X = train.sample(frac=1).reset_index(drop=True)
+Y = X['Y']
+X = X.drop(columns=['Y'])
+estimation_vs_numerical = run(X, Y)
+```
+
+```{python}
+def combine(L):
+  new_L = []
+  for elem in [list(elem) for elem in L]:
+    new_L += elem
+  return new_L
+
+fig, ax = plt.subplots(2)
+ax[0].hist(combine(estimation_vs_numerical['w']))
+ax[1].hist(combine(estimation_vs_numerical['b']))
+plt.show()
+```
+
+We can see in the graphs above that the numerical approximation of the gradient approximates closely the approximation of the gradient found with back propagation since the differences are closely distributed around 0.
