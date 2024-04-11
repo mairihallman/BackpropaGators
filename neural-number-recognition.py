@@ -272,19 +272,19 @@ plt.show()
 
 weights = model.layers[1].weights[0]
 
-all_values = np.reshape(weights, newshape = 28*28*300) # for finding max and min weights attained across all neurons
+#all_values = np.reshape(weights, newshape = 28*28*300) # for finding max and min weights attained across all neurons
 # for plotting consistent colouring across weight plots
-overall_limits = max([abs(min(all_values)), abs(max(all_values))])
+#overall_limits = max([abs(min(all_values)), abs(max(all_values))])
 
-size = 300
-plt.figure(figsize = (10, 125))
-for i in range(size):
-    plt.subplot(int(size/5), 5, i + 1)
-    plt.imshow(np.reshape(weights[:, i], (28, 28)), cmap='coolwarm', vmin = -overall_limits, vmax = overall_limits)
-    plt.title(i)
-    plt.axis('off')
-plt.tight_layout()
-plt.show()
+#size = 300
+#plt.figure(figsize = (10, 125))
+#for i in range(size):
+#    plt.subplot(int(size/5), 5, i + 1)
+#    plt.imshow(np.reshape(weights[:, i], (28, 28)), cmap='coolwarm', vmin = -overall_limits, vmax = overall_limits)
+#    plt.title(i)
+#    plt.axis('off')
+#plt.tight_layout()
+#plt.show()
 
 interesting_w = [91, 220]
 
