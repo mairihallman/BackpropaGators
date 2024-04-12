@@ -1,22 +1,12 @@
+## Imports for early parts
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-from scipy.special import softmax
 from tensorflow.keras.datasets import mnist
-from tensorflow.keras.layers import Dense, Flatten, Input
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.utils import set_random_seed
-from tensorflow.config.experimental import enable_op_determinism
-
-enable_op_determinism()
-set_random_seed(1)
 
 ## 1-1
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train, x_test = x_train / 255.0, x_test / 255.0 # scale the data to the interval [0, 1]
+x_train, x_test = x_train / 255.0, x_test / 255.0
 
 print(y_train[range(10)])
 
@@ -68,6 +58,8 @@ def update_parameters(w, b, db, dw, alpha):
   return w, b
 
 ## 1-4
+
+import pandas as pd
 
 def create_dataframe(data, name):
     df = []
@@ -135,10 +127,59 @@ plt.show()
 
 ## 1-6
 
-## 1-7 and 1-8
+## Imports for later parts
 
-# load dataset
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+from tensorflow.keras.layers import Dense, Flatten, Input
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils import set_random_seed
+from tensorflow.config.experimental import enable_op_determinism
+
+enable_op_determinism()
+set_random_seed(1)
+
+## 1-7
+
+def my_model(shape, n, classes, x_train, y_train):
+    """
+    Initializes, compiles, and fits a model.
+    
+    Parameters:
+    - shape: tuple, the shape of the input images ((28,28) for minst)
+    - n: int, the number of nodes in the hidden layer
+    - classes: int, the number of classes (10 for minst)
+    - x_train: numpy.ndarray
+    - y_train: numpy.ndarray
+      
+    Returns:
+    - The fitted model.
+    """
+    
+    # initialize model
+    model = Sequential([
+        Input(shape=shape),
+        Flatten(),
+        Dense(n, activation="tanh"), # new layer
+        Dense(classes)
+    ])
+
+    # compile model
+    model.compile(optimizer="adam",
+                  loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
+                  metrics=["accuracy"]
+                 )
+
+    # fit model
+    model.fit(x_train, y_train)
+    
+    return model
+
+model_0 = my_model((28,28),300,10,x_train,y_train)
+
+test_loss_0, test_acc_0 = model_0.evaluate(x_test, y_test)
+
+## 1-8
 
 #split the training set into a new training set and a validation set
 n_val = int(len(x_train)*0.1)
