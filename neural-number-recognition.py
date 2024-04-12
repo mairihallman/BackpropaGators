@@ -1,7 +1,7 @@
 ## Imports for early parts
 import matplotlib.pyplot as plt
 import numpy as np
-from tensorflow.keras.datasets import mnist
+from keras.datasets import mnist
 
 ## 1-1
 
@@ -124,16 +124,40 @@ ax[1].hist(combine(estimation_vs_numerical['b']))
 plt.show()
 
 ## 1-5
+# from itertools import islice
+
+# #Function to split data into batchs efficiently
+# def batch_maker(data: dict, SIZE=50):
+#     it = iter(data)
+#     for i in range(0, len(data), SIZE):
+#         yield {k:data[k] for k in islice(it, SIZE)}
+
+#
+def mini_batch(X, Y, alpha=0.01, SIZE=50):
+  w = np.random.rand(28*28, 10)
+  b = np.random.rand(10)
+  n = len(X)/SIZE
+  X_split = np.array_split(X, n)
+  Y_split = np.array_split(Y, n)
+
+  for i in range(0,n):
+    x_i = X_split[i].loc[i].to_numpy()
+    y_pred = predict(x_i, w, b)
+    y = one_hot(Y_split[i][0])
+    db, dw = backprop(y, y_pred, x_i)
+    w, b = update_parameters(w, b, db, dw, alpha)
+  
+  return w, b
 
 ## 1-6
 
 ## Imports for later parts
 
-from tensorflow.keras.layers import Dense, Flatten, Input
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.utils import set_random_seed
+from keras.layers import Dense, Flatten, Input
+from keras.losses import SparseCategoricalCrossentropy
+from keras.models import Sequential
+from keras.optimizers import SGD
+from keras.utils import set_random_seed
 from tensorflow.config.experimental import enable_op_determinism
 
 enable_op_determinism()
