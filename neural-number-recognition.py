@@ -49,7 +49,6 @@ data_clean = clean(data)
 
 # 1-2
 
-import numpy as np
 from math import log
 
 def softmax(x):
