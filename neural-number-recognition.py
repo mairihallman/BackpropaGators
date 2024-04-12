@@ -8,12 +8,10 @@ from tensorflow.keras.layers import Dense, Flatten, Input
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import SGD
-from tensorflow.random import set_seed
 from tensorflow.keras.utils import set_random_seed
 from tensorflow.config.experimental import enable_op_determinism
 
 enable_op_determinism()
-set_seed(1)
 set_random_seed(1)
 
 data = loadmat('mnist_all.mat')
