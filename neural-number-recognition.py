@@ -163,7 +163,47 @@ from tensorflow.config.experimental import enable_op_determinism
 enable_op_determinism()
 set_random_seed(1)
 
-## 1-7 and 1-8
+## 1-7
+
+def my_model(shape, n, classes, x_train, y_train):
+    """
+    Initializes, compiles, and fits a model.
+    
+    Parameters:
+    - shape: tuple, the shape of the input images ((28,28) for minst)
+    - n: int, the number of nodes in the hidden layer
+    - classes: int, the number of classes (10 for minst)
+    - x_train: numpy.ndarray
+    - y_train: numpy.ndarray
+      
+    Returns:
+    - The fitted model.
+    """
+    
+    # initialize model
+    model = Sequential([
+        Input(shape=shape),
+        Flatten(),
+        Dense(n, activation="tanh"), # new layer
+        Dense(classes)
+    ])
+
+    # compile model
+    model.compile(optimizer="adam",
+                  loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
+                  metrics=["accuracy"]
+                 )
+
+    # fit model
+    model.fit(x_train, y_train)
+    
+    return model
+
+model_0 = my_model((28,28),300,10,x_train,y_train)
+
+test_loss_0, test_acc_0 = model_0.evaluate(x_test, y_test)
+
+## 1-8
 
 #split the training set into a new training set and a validation set
 n_val = int(len(x_train)*0.1)
