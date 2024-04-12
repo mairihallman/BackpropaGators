@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from scipy.io import loadmat
 import pandas as pd
 import numpy as np
 from scipy.special import softmax
@@ -14,40 +13,23 @@ from tensorflow.config.experimental import enable_op_determinism
 enable_op_determinism()
 set_random_seed(1)
 
-data = loadmat('mnist_all.mat')
-data.keys()
+## 1-1
 
-# 1-1
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0 # scale the data to the interval [0, 1]
 
-fig, ax = plt.subplots(2, 5)
-for i in range(10):
-  ax[i % 2][i % 5].imshow(data[f"train{i}"][0].reshape((28,28)), cmap='gray')
-  ax[i % 2][i % 5].set_title(f"Number {i}")
+print(y_train[range(10)])
+
+fig, ax = plt.subplots(nrows = 10, ncols = 10, dpi = 200)
+for digit in range(10):
+    for counter in range(10): # display each digit 10 times
+        index = np.where(y_train == digit)[0][counter]
+        ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
+        ax[counter % 10][digit % 10].axis("off")
+# plt.savefig(fname = "figures/mnist-samples.png", format = "png")
 plt.show()
 
-#Cleaning the data
-#Taking too long to run
-"""
-def clean(D):
-  df = []
-  for i in range(0,10):
-    dict = {"pixel" + str(j) : [D[f"train{i}"][k][j] for k in range(len(D[f"train{i}"]))] for j in range(28*28)}
-    dict['Y'] = [i] * len(dict['pixel0'])
-    df.append(pd.DataFrame(dict))
-  return pd.concat(df)
-
-data_clean = clean(data)
-data_clean
-"""
-
-def clean(D):
-  d = {}
-  for i in range(0, 10):
-    d["train" + str(i)] = [elem / 255 for elem in D["train" + str(i)] for i in range(0,10)]
-  return d
-data_clean = clean(data)
-
-# 1-2
+## 1-2
 
 from math import log
 
@@ -72,9 +54,9 @@ b1 = np.random.rand(9)
 
 print(predict(np.reshape(data_clean['train0'][0], (28*28)), w1, b1), "\nThis is the predicted outputs for an untrained model")
 
-# 1-3
+## 1-3
 
-#This is the implementation of the gradient of the cost function for b (db) and w (dw)
+# This is the implementation of the gradient of the cost function for b (db) and w (dw)
 def backprop(y, p, xi):
   db = y-p
   dw = np.matmul(np.array([xi]).T, np.array([db]))
@@ -85,7 +67,7 @@ def update_parameters(w, b, db, dw, alpha):
   b = b - alpha * db
   return w, b
 
-# 1-4
+## 1-4
 
 def create_dataframe(data, name):
     df = []
@@ -149,11 +131,11 @@ ax[0].hist(combine(estimation_vs_numerical['w']))
 ax[1].hist(combine(estimation_vs_numerical['b']))
 plt.show()
 
-# 1-5
+## 1-5
 
-# 1-6
+## 1-6
 
-# 1-7 and 1-8
+## 1-7 and 1-8
 
 # load dataset
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -262,7 +244,7 @@ for i, incorrect in enumerate(pred_incorrect[:10]):
 plt.tight_layout()
 plt.show()
 
-# 1-9
+## 1-9
 
 weights = model.layers[1].weights[0]
 
