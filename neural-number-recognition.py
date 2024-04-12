@@ -156,6 +156,18 @@ def validate_mbgd(X, Y, w, b):
     out += cross_entropy(Y[i], y_pred)
     
   return out
+
+split_value = int(len(x_train)*0.1)
+
+x_val_5 = x_train[:split_value]
+y_val_5 = y_train[:split_value]
+
+x_train_5 = x_train[split_value:]
+y_train_5 = y_train[split_value:]
+
+w, b = mini_batch_gradient_descent(x_train_5, y_train)
+accuracy = validate_mbgd(x_val_5, x_val_5, w, b)
+
 ## 1-6
 
 ## Imports for later parts
