@@ -133,7 +133,7 @@ plt.show()
 #         yield {k:data[k] for k in islice(it, SIZE)}
 
 #
-def mini_batch(X, Y, alpha=0.01, SIZE=50):
+def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   w = np.random.rand(28*28, 10)
   b = np.random.rand(10)
   n = len(X)/SIZE
@@ -149,6 +149,13 @@ def mini_batch(X, Y, alpha=0.01, SIZE=50):
   
   return w, b
 
+def validate_mbgd(X, Y, w, b):
+  out = 0
+  for i in range(0, len(X)):
+    y_pred = predict(X[i], w, b)
+    out += cross_entropy(Y[i], y_pred)
+    
+  return out
 ## 1-6
 
 ## Imports for later parts
