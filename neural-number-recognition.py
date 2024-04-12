@@ -1,17 +1,7 @@
+## Imports for early parts
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-from scipy.special import softmax
 from tensorflow.keras.datasets import mnist
-from tensorflow.keras.layers import Dense, Flatten, Input
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.utils import set_random_seed
-from tensorflow.config.experimental import enable_op_determinism
-
-enable_op_determinism()
-set_random_seed(1)
 
 ## 1-1
 
@@ -68,6 +58,8 @@ def update_parameters(w, b, db, dw, alpha):
   return w, b
 
 ## 1-4
+
+import pandas as pd
 
 def create_dataframe(data, name):
     df = []
@@ -134,6 +126,18 @@ plt.show()
 ## 1-5
 
 ## 1-6
+
+## Imports for later parts
+
+from tensorflow.keras.layers import Dense, Flatten, Input
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils import set_random_seed
+from tensorflow.config.experimental import enable_op_determinism
+
+enable_op_determinism()
+set_random_seed(1)
 
 ## 1-7 and 1-8
 
