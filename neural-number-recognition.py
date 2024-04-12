@@ -141,9 +141,6 @@ set_random_seed(1)
 
 ## 1-7 and 1-8
 
-# load dataset
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
 #split the training set into a new training set and a validation set
 n_val = int(len(x_train)*0.1)
 
