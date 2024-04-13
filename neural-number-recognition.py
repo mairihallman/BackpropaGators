@@ -318,7 +318,7 @@ plt.show()
 
 weights = model.layers[1].weights[0]
 
-interesting_indices = [45, 209]
+interesting_indices = [295, 224]
 interesting_values = [
     np.reshape(weights[:, interesting_indices[0]], 28*28),
     np.reshape(weights[:, interesting_indices[1]], 28*28)
