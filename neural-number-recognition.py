@@ -16,7 +16,7 @@ for digit in range(10):
         index = np.where(y_train == digit)[0][counter]
         ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
         ax[counter % 10][digit % 10].axis("off")
-# plt.savefig(fname = "figures/mnist-samples.png", format = "png")
+plt.savefig(fname = "figures/mnist-samples.png", format = "png")
 plt.show()
 
 ## 1-2
@@ -285,7 +285,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Cross-Entropy Loss')
 plt.title('Training and Validation Loss')
 plt.legend()
-
+plt.savefig(fname = "figures/training-validation.png", format = "png")
 plt.show()
 
 predictions = model.predict(x_test)
@@ -301,6 +301,7 @@ for i, correct in enumerate(pred_correct[:20]):
     plt.title(f"Correct: {y_test[correct]}")
     plt.axis('off')
 plt.tight_layout()
+plt.savefig(fname = "figures/correctly-classified.png", format = "png")
 plt.show()
 
 plt.figure(figsize=(10, 5))
@@ -310,6 +311,7 @@ for i, incorrect in enumerate(pred_incorrect[:10]):
     plt.title(f"Pred: {pred_class[incorrect]}, True: {y_test[incorrect]}")
     plt.axis('off')
 plt.tight_layout()
+plt.savefig(fname = "figures/incorrectly-classified.png", format = "png")
 plt.show()
 
 ## 1-9
@@ -348,7 +350,7 @@ plt.imshow(
 )
 plt.axis('off')
 plt.title(interesting_indices[1])
-
+plt.savefig(fname = "figures/interesting-weights.png", format = "png")
 plt.show()
 
 interesting_weights = model.layers[2].weights[0]
