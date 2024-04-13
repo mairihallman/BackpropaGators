@@ -5,7 +5,11 @@ from keras.datasets import mnist
 
 ## 1-1
 
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
+# Load the MNIST dataset from the local file
+with np.load('mnist.npz') as data:
+    x_train, y_train = data['x_train'], data['y_train']
+    x_test, y_test = data['x_test'], data['y_test']
+# (x_train, y_train), (x_test, y_test) = mnist.load_data()
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
 print(y_train[range(10)])
@@ -37,12 +41,12 @@ def predict(X, w, b):
   return softmax(forward(X, w, b))
 
 def cross_entropy(y, p):
-  return sum([-y[i] * log(p[i]) - (1-y[i]) * log(1-p[i])])
+  return sum([-y[i] * log(p[i]) - (1-y[i]) * log(1-p[i]) for i in range(len(y))])
 
 w1 = np.random.rand(28*28, 9)
 b1 = np.random.rand(9)
 
-print(predict(np.reshape(data_clean['train0'][0], (28*28)), w1, b1), "\nThis is the predicted outputs for an untrained model")
+# print(predict(np.reshape(data_clean['train0'][0], (28*28)), w1, b1), "\nThis is the predicted outputs for an untrained model")
 
 ## 1-3
 
@@ -59,69 +63,69 @@ def update_parameters(w, b, db, dw, alpha):
 
 ## 1-4
 
-import pandas as pd
+# import pandas as pd
 
-def create_dataframe(data, name):
-    df = []
-    for i in range(10):
-        cur_df = pd.DataFrame({"pixel" + str(j) : [elem[j] / 255 for elem in data[name+str(i)]] for j in range(784)})
-        cur_df['Y'] = [i for j in range(len(cur_df))]
-        df.append(cur_df)
-    return pd.concat(df).reset_index(drop=True)                                     
+# def create_dataframe(data, name):
+#     df = []
+#     for i in range(10):
+#         cur_df = pd.DataFrame({"pixel" + str(j) : [elem[j] / 255 for elem in data[name+str(i)]] for j in range(784)})
+#         cur_df['Y'] = [i for j in range(len(cur_df))]
+#         df.append(cur_df)
+#     return pd.concat(df).reset_index(drop=True)                                     
 
-train = create_dataframe(data, 'train')
-test = create_dataframe(data, 'test')
+# train = create_dataframe(data, 'train')
+# test = create_dataframe(data, 'test')
 
 def one_hot(x):
   return np.array([int(i == x) for i in range(10)])
 
-def numerical_approximation_W(x, w, b, y, h):
-  a, b = np.shape(w)
-  approximations = [[0 for i in range(b)] for i in range(a)]
-  for i in range(a):
-    for j in range(b):
-      h_matrix = np.zeros(np.shape(w))
-      h_matrix[i][j] += h
-      approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
-  return approximations
+# def numerical_approximation_W(x, w, b, y, h):
+#   a, b = np.shape(w)
+#   approximations = [[0 for i in range(b)] for i in range(a)]
+#   for i in range(a):
+#     for j in range(b):
+#       h_matrix = np.zeros(np.shape(w))
+#       h_matrix[i][j] += h
+#       approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
+#   return approximations
 
-def numerical_approximation_b(x, w, b, y, h):
-  return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
+# def numerical_approximation_b(x, w, b, y, h):
+#   return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
 
-def run(X, Y, h=0.01, iterations = 100):
-  w = np.random.rand(28*28, 10)
-  b = np.random.rand(10)
-  current_dw = 0
-  current_db = 0
-  batch_counter = 0
-  estimation_vs_numerical = {'w' : [], 'b' : []}
+# def run(X, Y, h=0.01, iterations = 100):
+#   w = np.random.rand(28*28, 10)
+#   b = np.random.rand(10)
+#   current_dw = 0
+#   current_db = 0
+#   batch_counter = 0
+#   estimation_vs_numerical = {'w' : [], 'b' : []}
   
-  for i in range(iterations):
-    x_i = X.loc[i].to_numpy()
-    y_pred = predict(x_i, w, b)
-    y = one_hot(Y[i])
-    db, dw = backprop(y, y_pred, x_i)
-    estimation_vs_numerical['w'].append((dw - numerical_approximation_W(x_i, w, b, y, h)).flatten())
-    estimation_vs_numerical['b'].append((db - numerical_approximation_b(x_i, w, b, y, h)).flatten())
-    w, b = update_parameters(w, b, db, dw, 0.000001)
-  return estimation_vs_numerical
+#   for i in range(iterations):
+#     x_i = X.loc[i].to_numpy()
+#     y_pred = predict(x_i, w, b)
+#     y = one_hot(Y[i])
+#     db, dw = backprop(y, y_pred, x_i)
+#     estimation_vs_numerical['w'].append((dw - numerical_approximation_W(x_i, w, b, y, h)).flatten())
+#     estimation_vs_numerical['b'].append((db - numerical_approximation_b(x_i, w, b, y, h)).flatten())
+#     w, b = update_parameters(w, b, db, dw, 0.000001)
+#   return estimation_vs_numerical
     
     
-X = train.sample(frac=1).reset_index(drop=True)
-Y = X['Y']
-X = X.drop(columns=['Y'])
-estimation_vs_numerical = run(X, Y)
+# X = train.sample(frac=1).reset_index(drop=True)
+# Y = X['Y']
+# X = X.drop(columns=['Y'])
+# estimation_vs_numerical = run(X, Y)
 
-def combine(L):
-  new_L = []
-  for elem in [list(elem) for elem in L]:
-    new_L += elem
-  return new_L
+# def combine(L):
+#   new_L = []
+#   for elem in [list(elem) for elem in L]:
+#     new_L += elem
+#   return new_L
 
-fig, ax = plt.subplots(2)
-ax[0].hist(combine(estimation_vs_numerical['w']))
-ax[1].hist(combine(estimation_vs_numerical['b']))
-plt.show()
+# fig, ax = plt.subplots(2)
+# ax[0].hist(combine(estimation_vs_numerical['w']))
+# ax[1].hist(combine(estimation_vs_numerical['b']))
+# plt.show()
 
 ## 1-5
 # from itertools import islice
@@ -133,26 +137,28 @@ plt.show()
 #         yield {k:data[k] for k in islice(it, SIZE)}
 
 #
-def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
-  w = np.random.rand(28*28, 10)
+def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50, ITER=28):
+  w = np.random.rand(ITER, 10)
   b = np.random.rand(10)
-  n = len(X)/SIZE
+  n = len(X)//SIZE
   X_split = np.array_split(X, n)
   Y_split = np.array_split(Y, n)
 
-  for i in range(0,n):
-    x_i = X_split[i].loc[i].to_numpy()
-    y_pred = predict(x_i, w, b)
-    y = one_hot(Y_split[i][0])
-    db, dw = backprop(y, y_pred, x_i)
-    w, b = update_parameters(w, b, db, dw, alpha)
+  for i in range(n):
+    for j in range(SIZE):
+      #for k in range(ITER):
+      x_i = X_split[i][j][0]
+      y_pred = predict(x_i, w, b)
+      y = one_hot(Y_split[i][j])
+      db, dw = backprop(y, y_pred, x_i)
+      w, b = update_parameters(w, b, db, dw, alpha)
   
   return w, b
 
 def validate_mbgd(X, Y, w, b):
   out = 0
   for i in range(0, len(X)):
-    y_pred = predict(X[i], w, b)
+    y_pred = predict(X[i][0], w, b)
     out += cross_entropy(Y[i], y_pred)
     
   return out
@@ -167,6 +173,7 @@ y_train_5 = y_train[split_value:]
 
 w, b = mini_batch_gradient_descent(x_train_5, y_train)
 accuracy = validate_mbgd(x_val_5, x_val_5, w, b)
+print(w, b, accuracy)
 
 ## 1-6
 
@@ -177,9 +184,9 @@ from keras.losses import SparseCategoricalCrossentropy
 from keras.models import Sequential
 from keras.optimizers import SGD
 from keras.utils import set_random_seed
-from tensorflow.config.experimental import enable_op_determinism
+# from tensorflow.config.experimental import enable_op_determinism
 
-enable_op_determinism()
+# enable_op_determinism()
 set_random_seed(1)
 
 ## 1-7
