@@ -214,7 +214,7 @@ def my_model_mbgd(shape, n, classes, learning_rate, x_train, y_train, epochs, ba
     model = Sequential([
         Input(shape=shape),
         Flatten(),
-        Dense(n, activation="tanh", name="hidden"), # new layer
+        Dense(n, activation="tanh"), # new layer
         Dense(classes)
     ])
 
@@ -223,11 +223,10 @@ def my_model_mbgd(shape, n, classes, learning_rate, x_train, y_train, epochs, ba
                   loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
                   metrics=["accuracy"]
                  )
-
-    # fit model
-    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
     
-    return model, history
+    model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    
+    return model
 
 model, history = my_model_mbgd(shape=(28,28),n=300,classes=10,learning_rate=0.01,x_train=x_train_nv,y_train =y_train_nv,epochs=50,batch_size=50,x_val=x_val,y_val=y_val)
 
