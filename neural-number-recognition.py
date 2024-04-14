@@ -149,7 +149,53 @@ ax[0].hist(combine(estimation_vs_numerical['w']))
 ax[1].hist(combine(estimation_vs_numerical['b']))
 plt.show()
 
-# 1-5
+## 1-5
+# from itertools import islice
+
+# #Function to split data into batchs efficiently
+# def batch_maker(data: dict, SIZE=50):
+#     it = iter(data)
+#     for i in range(0, len(data), SIZE):
+#         yield {k:data[k] for k in islice(it, SIZE)}
+
+#
+def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50, ITER=28):
+  w = np.random.rand(ITER, 10)
+  b = np.random.rand(10)
+  n = len(X)//SIZE
+  X_split = np.array_split(X, n)
+  Y_split = np.array_split(Y, n)
+
+  for i in range(n):
+    for j in range(SIZE):
+      #for k in range(ITER):
+      x_i = X_split[i][j][0]
+      y_pred = predict(x_i, w, b)
+      y = one_hot(Y_split[i][j])
+      db, dw = backprop(y, y_pred, x_i)
+      w, b = update_parameters(w, b, db, dw, alpha)
+  
+  return w, b
+
+def validate_mbgd(X, Y, w, b):
+  out = 0
+  for i in range(0, len(X)):
+    y_pred = predict(X[i][0], w, b)
+    out += cross_entropy(Y[i], y_pred)
+    
+  return out
+
+split_value = int(len(x_train)*0.1)
+
+x_val_5 = x_train[:split_value]
+y_val_5 = y_train[:split_value]
+
+x_train_5 = x_train[split_value:]
+y_train_5 = y_train[split_value:]
+
+w, b = mini_batch_gradient_descent(x_train_5, y_train)
+accuracy = validate_mbgd(x_val_5, x_val_5, w, b)
+print(w, b, accuracy)
 
 # 1-6
 
