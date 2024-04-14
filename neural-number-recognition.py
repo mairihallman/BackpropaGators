@@ -3,15 +3,24 @@ from scipy.io import loadmat
 import pandas as pd
 import numpy as np
 from scipy.special import softmax
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.layers import Dense, Flatten, Input
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.utils import set_random_seed
-from tensorflow.config.experimental import enable_op_determinism
+from keras.datasets import mnist
+from keras.layers import Dense, Flatten, Input
+from keras.losses import SparseCategoricalCrossentropy
+from keras.models import Sequential
+from keras.optimizers import SGD
+from keras.utils import set_random_seed
+#from tensorflow.config.experimental import enable_op_determinism
 
-enable_op_determinism()
+import warnings #TO REMOVE
+# print("Set warnings")
+# max_value = np.finfo(np.float64).max
+# overflow_value = np.log(max_value)+1
+# with warnings.catch_warnings():
+#   warnings.filterwarnings('error')
+#   result = np.exp(overflow_value)
+# print("Warning thrown!")
+
+#enable_op_determinism()
 set_random_seed(1)
 
 data = loadmat('mnist_all.mat')
@@ -159,44 +168,58 @@ plt.show()
 #         yield {k:data[k] for k in islice(it, SIZE)}
 
 #
-def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50, ITER=28):
-  w = np.random.rand(ITER, 10)
+def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
+  w = np.random.rand(28*28, 10)
   b = np.random.rand(10)
   n = len(X)//SIZE
   X_split = np.array_split(X, n)
   Y_split = np.array_split(Y, n)
 
   for i in range(n):
+    X_i = X_split[i].reset_index(drop=True)
+    Y_i = Y_split[i].reset_index(drop=True)
     for j in range(SIZE):
-      #for k in range(ITER):
-      x_i = X_split[i][j][0]
-      y_pred = predict(x_i, w, b)
-      y = one_hot(Y_split[i][j])
+      x_i = X_i.loc[j].to_numpy()
+      np.seterr(all='warn')
+      with warnings.catch_warnings():
+        warnings.filterwarnings('error')
+        y_pred = predict(x_i, w, b)
+      y = one_hot(Y_i[j])
       db, dw = backprop(y, y_pred, x_i)
       w, b = update_parameters(w, b, db, dw, alpha)
   
   return w, b
 
 def validate_mbgd(X, Y, w, b):
+  X = X.reset_index(drop=True)
+  Y = Y.reset_index(drop=True)
+
   out = 0
-  for i in range(0, len(X)):
-    y_pred = predict(X[i][0], w, b)
-    out += cross_entropy(Y[i], y_pred)
+  for i in range(len(X)):
+    x_i = X.loc[i].to_numpy()
+    y_pred = predict(x_i, w, b)
+    y = one_hot(Y[i])
+    out += cross_entropy(y, y_pred)
     
   return out
 
+x_train = train.sample(frac=1).reset_index(drop=True)
+y_train = x_train['Y']
+x_train = x_train.drop(columns=['Y'])
+
 split_value = int(len(x_train)*0.1)
 
-x_val_5 = x_train[:split_value]
-y_val_5 = y_train[:split_value]
+x_val_5 = x_train.iloc[:split_value,:].reset_index(drop=True)
+y_val_5 = y_train.iloc[:split_value,].reset_index(drop=True)
 
-x_train_5 = x_train[split_value:]
-y_train_5 = y_train[split_value:]
+x_train_5 = x_train.iloc[split_value:,:].reset_index(drop=True)
+y_train_5 = y_train.iloc[split_value:,].reset_index(drop=True)
 
-w, b = mini_batch_gradient_descent(x_train_5, y_train)
-accuracy = validate_mbgd(x_val_5, x_val_5, w, b)
-print(w, b, accuracy)
+w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
+accuracy = validate_mbgd(x_val_5, y_val_5, w, b)
+print("1-5", w, b, accuracy)
 
+exit() #TO REMOVE
 # 1-6
 
 # 1-7 and 1-8
