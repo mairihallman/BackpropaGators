@@ -207,32 +207,20 @@ def my_model_mbgd(
     - The fitted model and the history object.
     """
     
-    # initialize model
-
-    model = Sequential(
-        [
-            Input(shape = shape),
-            Flatten(),
-            Dense(hl_size, activation="tanh"), # new layer
-            Dense(n_classes)
-        ]
-    )
-
-    # compile model
-    model.compile(
-        optimizer=SGD(learning_rate=learning_rate),
-        loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
-        metrics=["accuracy"]
-    )
-
-    # fit model
-    history = model.fit(
-        x_train,
-        y_train,
-        epochs=epochs,
-        batch_size=batch_size,
-        validation_data=(x_val, y_val)
-    )
+    # Initialize model
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    # Compile model
+    model.compile(optimizer=SGD(learning_rate=learning_rate),
+                  loss=SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=["accuracy"])
+    
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
     
     return model, history
 
