@@ -11,15 +11,6 @@ from keras.optimizers import SGD
 from keras.utils import set_random_seed
 #from tensorflow.config.experimental import enable_op_determinism
 
-import warnings #TO REMOVE
-# print("Set warnings")
-# max_value = np.finfo(np.float64).max
-# overflow_value = np.log(max_value)+1
-# with warnings.catch_warnings():
-#   warnings.filterwarnings('error')
-#   result = np.exp(overflow_value)
-# print("Warning thrown!")
-
 #enable_op_determinism()
 set_random_seed(1)
 
@@ -60,9 +51,9 @@ data_clean = clean(data)
 
 from math import log
 
-def softmax(x):
-  e_x = np.exp(x)
-  return e_x / e_x.sum()
+def softmax(x): #numerically stable softmax
+  x = x - np.max(x)
+  return np.exp(x) / np.sum(np.exp(x))
 
 def ReLU(x):
   return [max(0, elem) for elem in x]
