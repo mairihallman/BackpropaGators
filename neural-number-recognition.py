@@ -150,8 +150,16 @@ ax[1].hist(combine(estimation_vs_numerical['b']))
 plt.show()
 
 ## 1-5
-# from itertools import islice
+# following two functions are from https://jaykmody.com/blog/stable-softmax/
+def log_softmax(x):
+    # assumes x is a vector
+    x_max = np.max(x)
+    return x - x_max - np.log(np.sum(np.exp(x - x_max)))
 
+def cross_entropy_num_safe(y_hat, y_true):
+    return -log_softmax(y_hat)[y_true]
+
+# from itertools import islice
 # #Function to split data into batchs efficiently
 # def batch_maker(data: dict, SIZE=50):
 #     it = iter(data)
@@ -171,10 +179,7 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
     Y_i = Y_split[i].reset_index(drop=True)
     for j in range(SIZE):
       x_i = X_i.loc[j].to_numpy()
-      np.seterr(all='warn')
-      with warnings.catch_warnings():
-        warnings.filterwarnings('error')
-        y_pred = predict(x_i, w, b)
+      y_pred = predict(x_i, w, b)
       y = one_hot(Y_i[j])
       db, dw = backprop(y, y_pred, x_i)
       w, b = update_parameters(w, b, db, dw, alpha)
@@ -188,11 +193,11 @@ def validate_mbgd(X, Y, w, b):
   out = 0
   for i in range(len(X)):
     x_i = X.loc[i].to_numpy()
-    y_pred = predict(x_i, w, b)
-    y = one_hot(Y[i])
-    out += cross_entropy(y, y_pred)
+    y_hat = forward(x_i, w, b)
+    y = Y[i]
+    out += cross_entropy_num_safe(y_hat, y)
     
-  return out
+  return out/len(X)
 
 x_train = train.sample(frac=1).reset_index(drop=True)
 y_train = x_train['Y']
