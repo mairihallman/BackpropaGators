@@ -39,10 +39,12 @@ def predict(X, w, b):
 def cross_entropy(y, p):
   return sum([-y[i] * log(p[i]) - (1-y[i]) * log(1-p[i])])
 
-w1 = np.random.rand(28*28, 9)
-b1 = np.random.rand(9)
+w1 = np.random.rand(28*28, 10)
+b1 = np.random.rand(10)
 
-print(predict(np.reshape(data_clean['train0'][0], (28*28)), w1, b1), "\nThis is the predicted outputs for an untrained model")
+print("The untrained model makes the following prediction for any input image:")
+for i in range(len(b1)):
+    print(str(i) + ": " + str(predict(np.reshape(x_train[0], (28*28)), w1, b1)[i]))
 
 ## 1-3
 
@@ -59,31 +61,18 @@ def update_parameters(w, b, db, dw, alpha):
 
 ## 1-4
 
-import pandas as pd
-
-def create_dataframe(data, name):
-    df = []
-    for i in range(10):
-        cur_df = pd.DataFrame({"pixel" + str(j) : [elem[j] / 255 for elem in data[name+str(i)]] for j in range(784)})
-        cur_df['Y'] = [i for j in range(len(cur_df))]
-        df.append(cur_df)
-    return pd.concat(df).reset_index(drop=True)                                     
-
-train = create_dataframe(data, 'train')
-test = create_dataframe(data, 'test')
-
-def one_hot(x):
+def one_hot(x): # one-hot vector encoding
   return np.array([int(i == x) for i in range(10)])
 
 def numerical_approximation_W(x, w, b, y, h):
-  a, b = np.shape(w)
-  approximations = [[0 for i in range(b)] for i in range(a)]
+  a, b = np.shape(w) # number of rows and columns of the matrix w
+  approximations = [[0 for i in range(b)] for i in range(a)] # initialize to zero matrix
   for i in range(a):
     for j in range(b):
       h_matrix = np.zeros(np.shape(w))
-      h_matrix[i][j] += h
+      h_matrix[i][j] += h # perturbation in the (i, j) direction
       approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
-  return approximations
+  return approximations # two-sided approximation
 
 def numerical_approximation_b(x, w, b, y, h):
   return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
@@ -97,7 +86,7 @@ def run(X, Y, h=0.01, iterations = 100):
   estimation_vs_numerical = {'w' : [], 'b' : []}
   
   for i in range(iterations):
-    x_i = X.loc[i].to_numpy()
+    x_i = np.reshape(X[i], 28*28)
     y_pred = predict(x_i, w, b)
     y = one_hot(Y[i])
     db, dw = backprop(y, y_pred, x_i)
@@ -105,12 +94,8 @@ def run(X, Y, h=0.01, iterations = 100):
     estimation_vs_numerical['b'].append((db - numerical_approximation_b(x_i, w, b, y, h)).flatten())
     w, b = update_parameters(w, b, db, dw, 0.000001)
   return estimation_vs_numerical
-    
-    
-X = train.sample(frac=1).reset_index(drop=True)
-Y = X['Y']
-X = X.drop(columns=['Y'])
-estimation_vs_numerical = run(X, Y)
+
+estimation_vs_numerical = run(x_train, y_train)
 
 def combine(L):
   new_L = []
@@ -121,6 +106,7 @@ def combine(L):
 fig, ax = plt.subplots(2)
 ax[0].hist(combine(estimation_vs_numerical['w']))
 ax[1].hist(combine(estimation_vs_numerical['b']))
+plt.savefig(fname = "figures/compare-gradients.png", format = "png")
 plt.show()
 
 ## 1-5
