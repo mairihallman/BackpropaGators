@@ -257,7 +257,7 @@ model, history = my_model_mbgd(
     y_val=y_val,
     learning_rate=0.01,
     batch_size=50,
-    epochs = 35
+    epochs = 30
 )
 test_loss, test_acc = model.evaluate(x_test, y_test)
 
