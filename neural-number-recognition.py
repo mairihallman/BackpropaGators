@@ -143,13 +143,13 @@ def my_model(shape, n, classes, x_train, y_train):
     """
     
     # initialize model
-    model = Sequential([
-        Input(shape=shape),
-        Flatten(),
-        Dense(n, activation="tanh"), # new layer
-        Dense(classes)
-    ])
-
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+    
     # compile model
     model.compile(optimizer="adam",
                   loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
@@ -160,7 +160,7 @@ def my_model(shape, n, classes, x_train, y_train):
     model.fit(x_train, y_train)
     
     return model
-
+    
 model_0 = my_model((28,28),300,10,x_train,y_train)
 
 test_loss_0, test_acc_0 = model_0.evaluate(x_test, y_test)
