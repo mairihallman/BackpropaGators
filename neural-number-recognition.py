@@ -222,6 +222,7 @@ def my_model_mbgd(
     """
     
     # initialize model
+
     model = Sequential(
         [
             Input(shape = shape),
