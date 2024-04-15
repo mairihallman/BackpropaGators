@@ -16,7 +16,7 @@ for digit in range(10):
         index = np.where(y_train == digit)[0][counter]
         ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
         ax[counter % 10][digit % 10].axis("off")
-# plt.savefig(fname = "figures/mnist-samples.png", format = "png")
+plt.savefig(fname = "figures/mnist-samples.png", format = "png")
 plt.show()
 
 ## 1-2
@@ -190,46 +190,75 @@ y_val = y_train[:n_val]
 x_train_nv = x_train[n_val:]
 y_train_nv = y_train[n_val:]
 
-def my_model_mbgd(shape, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
+def my_model_mbgd(
+    x_train,
+    y_train,
+    x_val,
+    y_val,
+    learning_rate,
+    batch_size,
+    epochs = 50,
+    shape = (28, 28),
+    hl_size = 300,
+    n_classes = 10
+):
     """
     Initializes, compiles, and fits a model.
     
     Parameters:
-    - shape: tuple, the shape of the input images ((28,28) for minst)
-    - n: int, the number of nodes in the hidden layer
-    - classes: int, the number of classes (10 for minst)
-    - learning_rate: float, the learning rate
     - x_train: numpy.ndarray
     - y_train: numpy.ndarray
-    - epochs: int
-    - batch_size: int
     - x_val: numpy.ndarray
     - y_val: numpy.ndarray
+    - learning_rate: float, the learning rate
+    - batch_size: int
+    - epochs: int, the number of training epochs (default: 50)
+    - shape: tuple, the shape of the input images (default: (28, 28))
+    - hl_size: int, the number of nodes in the hidden layer (default: 300)
+    - n_classes: int, the number of classes (default: 10)
       
     Returns:
     - The fitted model and the history object.
     """
     
     # initialize model
-    model = Sequential([
-        Input(shape=shape),
-        Flatten(),
-        Dense(n, activation="tanh"), # new layer
-        Dense(classes)
-    ])
+
+    model = Sequential(
+        [
+            Input(shape = shape),
+            Flatten(),
+            Dense(hl_size, activation="tanh"), # new layer
+            Dense(n_classes)
+        ]
+    )
 
     # compile model
-    model.compile(optimizer=SGD(learning_rate=learning_rate),
-                  loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
-                  metrics=["accuracy"]
-                 )
-    
-    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    model.compile(
+        optimizer=SGD(learning_rate=learning_rate),
+        loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
+        metrics=["accuracy"]
+    )
+
+    # fit model
+    history = model.fit(
+        x_train,
+        y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_data=(x_val, y_val)
+    )
     
     return model, history
 
-model, history = my_model_mbgd(shape=(28,28),n=300,classes=10,learning_rate=0.01,x_train=x_train_nv,y_train =y_train_nv,epochs=50,batch_size=50,x_val=x_val,y_val=y_val)
-
+model, history = my_model_mbgd(
+    x_train=x_train_nv,
+    y_train=y_train_nv,
+    x_val=x_val,
+    y_val=y_val,
+    learning_rate=0.01,
+    batch_size=50,
+    epochs = 30
+)
 test_loss, test_acc = model.evaluate(x_test, y_test)
 
 acc = history.history['accuracy']
@@ -257,7 +286,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Cross-Entropy Loss')
 plt.title('Training and Validation Loss')
 plt.legend()
-
+plt.savefig(fname = "figures/training-validation.png", format = "png")
 plt.show()
 
 predictions = model.predict(x_test)
@@ -270,9 +299,10 @@ plt.figure(figsize=(10, 5))
 for i, correct in enumerate(pred_correct[:20]):
     plt.subplot(4, 5, i + 1)
     plt.imshow(x_test[correct].reshape(28, 28), cmap='gray')
-    plt.title(f"Pred: {pred_class[correct]}, True: {y_test[correct]}")
+    plt.title(f"Correct: {y_test[correct]}")
     plt.axis('off')
 plt.tight_layout()
+plt.savefig(fname = "figures/correctly-classified.png", format = "png")
 plt.show()
 
 plt.figure(figsize=(10, 5))
@@ -282,38 +312,55 @@ for i, incorrect in enumerate(pred_incorrect[:10]):
     plt.title(f"Pred: {pred_class[incorrect]}, True: {y_test[incorrect]}")
     plt.axis('off')
 plt.tight_layout()
+plt.savefig(fname = "figures/incorrectly-classified.png", format = "png")
 plt.show()
 
 ## 1-9
 
 weights = model.layers[1].weights[0]
 
-interesting_w = [91, 220]
-
-interesting_values = [np.reshape(weights[:, interesting_w[0]], 28*28), np.reshape(weights[:, interesting_w[1]], 28*28)]
+interesting_indices = [295, 224]
+interesting_values = [
+    np.reshape(weights[:, interesting_indices[0]], 28*28),
+    np.reshape(weights[:, interesting_indices[1]], 28*28)
+]
 interesting_values = np.reshape(interesting_values, 2*28*28)
-interesting_limit = max([abs(min(interesting_values)), abs(max(interesting_values))]) # for obtaining a colour bar centred at zero
+interesting_limit = max(
+    [abs(min(interesting_values)), abs(max(interesting_values))]
+) # for obtaining a colour bar centred at zero
 
-plt.figure(figsize = (14, 5))
+plt.figure(figsize=(14, 5))
 
 plt.subplot(1, 2, 1)
-plt.imshow(np.reshape(weights[:, interesting_w[0]], (28, 28)), cmap='coolwarm', vmin = -interesting_limit, vmax = interesting_limit)
-plt.title(interesting_w[0])
+plt.imshow(
+    np.reshape(weights[:, interesting_indices[0]], (28, 28)),
+    cmap='coolwarm',
+    vmin = -interesting_limit,
+    vmax = interesting_limit
+)
+plt.title(interesting_indices[0])
 plt.axis('off')
 plt.colorbar()
 
 plt.subplot(1, 2, 2)
-plt.imshow(np.reshape(weights[:, interesting_w[1]], (28, 28)), cmap='coolwarm', vmin = -interesting_limit, vmax = interesting_limit)
+plt.imshow(
+    np.reshape(weights[:, interesting_indices[1]], (28, 28)),
+    cmap='coolwarm',
+    vmin = -interesting_limit,
+    vmax = interesting_limit
+)
 plt.axis('off')
-plt.title(interesting_w[1])
-
+plt.title(interesting_indices[1])
+plt.savefig(fname = "figures/interesting-weights.png", format = "png")
 plt.show()
 
 interesting_weights = model.layers[2].weights[0]
-interesting_weights = [interesting_weights[interesting_w[0], :].numpy(), interesting_weights[interesting_w[1], :].numpy()]
-
-for k in range(len(interesting_weights)):
-    print("Output weights from hidden neuron " + str(interesting_w[k]) + ":")
+interesting_weights = [
+    interesting_weights[interesting_indices[0], :].numpy(),
+    interesting_weights[interesting_indices[1], :].numpy()
+]
+for k in range(2):
+    print("Output weights from hidden neuron " + str(interesting_indices[k]) + ":")
     for i in range(10):
         print(str(i) + ": " + str(interesting_weights[k][i]))
     print("")
