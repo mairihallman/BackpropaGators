@@ -216,8 +216,8 @@ x_train_5 = x_train.iloc[split_value:,:].reset_index(drop=True)
 y_train_5 = y_train.iloc[split_value:,].reset_index(drop=True)
 
 w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
-accuracy = validate_mbgd(x_val_5, y_val_5, w, b)
-print("1-5", w, b, accuracy)
+avg_loss = validate_mbgd(x_val_5, y_val_5, w, b)
+print("1-5", w, b, avg_loss)
 
 exit() #TO REMOVE
 # 1-6
