@@ -39,10 +39,12 @@ def predict(X, w, b):
 def cross_entropy(y, p):
   return sum([-y[i] * log(p[i]) - (1-y[i]) * log(1-p[i])])
 
-w1 = np.random.rand(28*28, 9)
-b1 = np.random.rand(9)
+w1 = np.random.rand(28*28, 10)
+b1 = np.random.rand(10)
 
-print(predict(np.reshape(data_clean['train0'][0], (28*28)), w1, b1), "\nThis is the predicted outputs for an untrained model")
+print("The untrained model makes the following prediction for any input image:")
+for i in range(len(b1)):
+    print(str(i) + ": " + str(predict(np.reshape(x_train[0], (28*28)), w1, b1)[i]))
 
 ## 1-3
 
