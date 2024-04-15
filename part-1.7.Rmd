@@ -12,14 +12,16 @@ use_condaenv("4373-project",require=TRUE)
 ```
 
 ```{python}
+from tensorflow.config.experimental import enable_op_determinism
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import Dense, Flatten, Input
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Model
 from tensorflow.keras.utils import set_random_seed
 ```
 
 ```{python}
+enable_op_determinism()
 set_random_seed(1)
 ```
 ```{python}
@@ -45,13 +47,13 @@ def my_model(shape, n, classes, x_train, y_train):
     """
     
     # initialize model
-    model = Sequential([
-        Input(shape=shape),
-        Flatten(),
-        Dense(n, activation="tanh"), # new layer
-        Dense(classes)
-    ])
-
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+    
     # compile model
     model.compile(optimizer="adam",
                   loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
@@ -64,8 +66,8 @@ def my_model(shape, n, classes, x_train, y_train):
     return model
 ```
 ```{python}
-model = my_model((28,28),300,10,x_train,y_train)
+model_0 = my_model((28,28),300,10,x_train,y_train)
 ```
 ```{python}
-test_loss, test_acc = model.evaluate(x_test, y_test)
+test_loss_0, test_acc_0 = model_0.evaluate(x_test, y_test)
 ```

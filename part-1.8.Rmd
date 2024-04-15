@@ -13,15 +13,17 @@ use_condaenv("4373-project",require=TRUE)
 
 ```{python}
 import matplotlib.pyplot as plt
+from tensorflow.config.experimental import enable_op_determinism
 import numpy as np
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import Dense, Flatten, Input
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.utils import set_random_seed
 ```
 ```{python}
+enable_op_determinism()
 set_random_seed(1)
 ```
 ```{python}
@@ -62,18 +64,17 @@ def my_model_mbgd(shape, n, classes, learning_rate, x_train, y_train, epochs, ba
     """
     
     # initialize model
-    model = Sequential([
-        Input(shape=shape),
-        Flatten(),
-        Dense(n, activation="tanh"), # new layer
-        Dense(classes)
-    ])
-
-    # compile model
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    # Compile model
     model.compile(optimizer=SGD(learning_rate=learning_rate),
-                  loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
-                  metrics=["accuracy"]
-                 )
+                  loss=SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=["accuracy"])
     
     history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
     
