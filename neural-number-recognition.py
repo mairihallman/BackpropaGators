@@ -177,12 +177,16 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   for i in range(n):
     X_i = X_split[i].reset_index(drop=True)
     Y_i = Y_split[i].reset_index(drop=True)
+    dbTotal = 0
+    dwTotal = 0
     for j in range(SIZE):
       x_i = X_i.loc[j].to_numpy()
       y_pred = predict(x_i, w, b)
       y = one_hot(Y_i[j])
       db, dw = backprop(y, y_pred, x_i)
-      w, b = update_parameters(w, b, db, dw, alpha)
+      dbTotal += db
+      dwTotal += dw
+    w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
   
   return w, b
 
