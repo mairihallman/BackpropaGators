@@ -111,8 +111,6 @@ plt.show()
 
 ## 1-5
 
-## 1-6
-
 # following two functions are from https://jaykmody.com/blog/stable-softmax/
 def log_softmax(x):
     # assumes x is a vector
@@ -175,6 +173,8 @@ y_train_5 = y_train[split_value:]
 w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
 avg_loss = validate_mbgd(x_val_5, y_val_5, w, b)
 print("1-5", w, b, avg_loss)
+
+## 1-6
 
 ## Imports for later parts
 
