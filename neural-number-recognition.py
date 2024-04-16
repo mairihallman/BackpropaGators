@@ -120,6 +120,13 @@ def log_softmax(x):
 def cross_entropy_num_safe(y_hat, y_true):
     return -log_softmax(y_hat)[y_true]
 
+def log_loss(y_hat, y_true, THRESHOLD=10):
+   entropy = cross_entropy_num_safe(y_hat, y_true)
+   if entropy >= THRESHOLD:
+      return 0 #misclassified
+   else:
+      return 1 #properly classified
+
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   w = np.random.rand(28*28, 10)
@@ -134,12 +141,14 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
     dbTotal = 0
     dwTotal = 0
     for j in range(SIZE):
-      x_i = np.reshape(X_i[j], 28*28)
-      y_pred = predict(x_i, w, b)
-      y = one_hot(Y_i[j])
-      db, dw = backprop(y, y_pred, x_i)
-      dbTotal += db
-      dwTotal += dw
+      x_j = np.reshape(X_i[j], 28*28)
+      y_pred = predict(x_j, w, b)
+      loss = log_loss(y_pred, Y_i[j])
+      if loss == 0: #if predictor isn't right, we find the gradient 
+        y = one_hot(Y_i[j])
+        db, dw = backprop(y, y_pred, x_j)
+        dbTotal += db
+        dwTotal += dw
     w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
   
   return w, b
@@ -151,7 +160,7 @@ def validate_mbgd(X, Y, w, b):
     x_i = np.reshape(X[i], 28*28)
     y_hat = forward(x_i, w, b)
     y = Y[i]
-    out += cross_entropy_num_safe(y_hat, y)
+    out += log_loss(y_hat, y)
     
   return out/len(X)
 
@@ -166,6 +175,8 @@ y_train_5 = y_train[split_value:]
 w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
 avg_loss = validate_mbgd(x_val_5, y_val_5, w, b)
 print("1-5", w, b, avg_loss)
+
+exit()
 
 ## 1-6
 
