@@ -23,9 +23,9 @@ plt.show()
 
 from math import log
 
-def softmax(x):
-  e_x = np.exp(x)
-  return e_x / e_x.sum()
+def softmax(x): #numerically stable softmax
+  x = x - np.max(x)
+  return np.exp(x) / np.sum(np.exp(x))
 
 def ReLU(x):
   return [max(0, elem) for elem in x]
@@ -110,6 +110,69 @@ plt.savefig(fname = "figures/compare-gradients.png", format = "png")
 plt.show()
 
 ## 1-5
+
+# following two functions are from https://jaykmody.com/blog/stable-softmax/
+def log_softmax(x):
+    # assumes x is a vector
+    x_max = np.max(x)
+    return x - x_max - np.log(np.sum(np.exp(x - x_max)))
+
+def cross_entropy_num_safe(y_hat, y_true):
+    return -log_softmax(y_hat)[y_true]
+
+# from itertools import islice
+# #Function to split data into batchs efficiently
+# def batch_maker(data: dict, SIZE=50):
+#     it = iter(data)
+#     for i in range(0, len(data), SIZE):
+#         yield {k:data[k] for k in islice(it, SIZE)}
+
+#
+def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
+  w = np.random.rand(28*28, 10)
+  b = np.random.rand(10)
+  n = len(X)//SIZE # floor division
+  X_split = np.array_split(X, n)
+  Y_split = np.array_split(Y, n)
+
+  for i in range(n):
+    X_i = X_split[i]
+    Y_i = Y_split[i]
+    dbTotal = 0
+    dwTotal = 0
+    for j in range(SIZE):
+      x_i = np.reshape(X_i[j], 28*28)
+      y_pred = predict(x_i, w, b)
+      y = one_hot(Y_i[j])
+      db, dw = backprop(y, y_pred, x_i)
+      dbTotal += db
+      dwTotal += dw
+    w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
+  
+  return w, b
+
+def validate_mbgd(X, Y, w, b):
+
+  out = 0
+  for i in range(len(X)):
+    x_i = np.reshape(X[i], 28*28)
+    y_hat = forward(x_i, w, b)
+    y = Y[i]
+    out += cross_entropy_num_safe(y_hat, y)
+    
+  return out/len(X)
+
+split_value = int(len(x_train)*0.1)
+
+x_val_5 = x_train[:split_value]
+y_val_5 = y_train[:split_value]
+
+x_train_5 = x_train[split_value:]
+y_train_5 = y_train[split_value:]
+
+w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
+avg_loss = validate_mbgd(x_val_5, y_val_5, w, b)
+print("1-5", w, b, avg_loss)
 
 ## 1-6
 
