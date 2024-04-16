@@ -78,16 +78,16 @@ def numerical_approximation_W(x, w, b, y, h):
       approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
   return approximations # two-sided approximation
 
-# def numerical_approximation_b(x, w, b, y, h):
-#   return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
+def numerical_approximation_b(x, w, b, y, h):
+  return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
 
-# def run(X, Y, h=0.01, iterations = 100):
-#   w = np.random.rand(28*28, 10)
-#   b = np.random.rand(10)
-#   current_dw = 0
-#   current_db = 0
-#   batch_counter = 0
-#   estimation_vs_numerical = {'w' : [], 'b' : []}
+def run(X, Y, h=0.01, iterations = 100):
+  w = np.random.rand(28*28, 10)
+  b = np.random.rand(10)
+  current_dw = 0
+  current_db = 0
+  batch_counter = 0
+  estimation_vs_numerical = {'w' : [], 'b' : []}
   
   for i in range(iterations):
     x_i = np.reshape(X[i], 28*28)
@@ -101,11 +101,11 @@ def numerical_approximation_W(x, w, b, y, h):
 
 estimation_vs_numerical = run(x_train, y_train)
 
-# def combine(L):
-#   new_L = []
-#   for elem in [list(elem) for elem in L]:
-#     new_L += elem
-#   return new_L
+def combine(L):
+  new_L = []
+  for elem in [list(elem) for elem in L]:
+    new_L += elem
+  return new_L
 
 fig, ax = plt.subplots(2)
 ax[0].hist(combine(estimation_vs_numerical['w']))
