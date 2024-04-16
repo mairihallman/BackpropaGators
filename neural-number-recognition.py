@@ -124,13 +124,6 @@ def log_softmax(x):
 def cross_entropy_num_safe(y_hat, y_true):
     return -log_softmax(y_hat)[y_true]
 
-# from itertools import islice
-# #Function to split data into batchs efficiently
-# def batch_maker(data: dict, SIZE=50):
-#     it = iter(data)
-#     for i in range(0, len(data), SIZE):
-#         yield {k:data[k] for k in islice(it, SIZE)}
-
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   w = np.random.rand(28*28, 10)
