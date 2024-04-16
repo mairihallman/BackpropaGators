@@ -20,16 +20,16 @@ for digit in range(10):
         index = np.where(y_train == digit)[0][counter]
         ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
         ax[counter % 10][digit % 10].axis("off")
-# plt.savefig(fname = "figures/mnist-samples.png", format = "png")
+plt.savefig(fname = "figures/mnist-samples.png", format = "png")
 plt.show()
 
 ## 1-2
 
 from math import log
 
-def softmax(x):
-  e_x = np.exp(x)
-  return e_x / e_x.sum()
+def softmax(x): #numerically stable softmax
+  x = x - np.max(x)
+  return np.exp(x) / np.sum(np.exp(x))
 
 def ReLU(x):
   return [max(0, elem) for elem in x]
@@ -43,10 +43,12 @@ def predict(X, w, b):
 def cross_entropy(y, p):
   return sum([-y[i] * log(p[i]) - (1-y[i]) * log(1-p[i]) for i in range(len(y))])
 
-w1 = np.random.rand(28*28, 9)
-b1 = np.random.rand(9)
+w1 = np.random.rand(28*28, 10)
+b1 = np.random.rand(10)
 
-# print(predict(np.reshape(data_clean['train0'][0], (28*28)), w1, b1), "\nThis is the predicted outputs for an untrained model")
+print("The untrained model makes the following prediction for any input image:")
+for i in range(len(b1)):
+    print(str(i) + ": " + str(predict(np.reshape(x_train[0], (28*28)), w1, b1)[i]))
 
 ## 1-3
 
@@ -63,31 +65,18 @@ def update_parameters(w, b, db, dw, alpha):
 
 ## 1-4
 
-# import pandas as pd
-
-# def create_dataframe(data, name):
-#     df = []
-#     for i in range(10):
-#         cur_df = pd.DataFrame({"pixel" + str(j) : [elem[j] / 255 for elem in data[name+str(i)]] for j in range(784)})
-#         cur_df['Y'] = [i for j in range(len(cur_df))]
-#         df.append(cur_df)
-#     return pd.concat(df).reset_index(drop=True)                                     
-
-# train = create_dataframe(data, 'train')
-# test = create_dataframe(data, 'test')
-
-def one_hot(x):
+def one_hot(x): # one-hot vector encoding
   return np.array([int(i == x) for i in range(10)])
 
-# def numerical_approximation_W(x, w, b, y, h):
-#   a, b = np.shape(w)
-#   approximations = [[0 for i in range(b)] for i in range(a)]
-#   for i in range(a):
-#     for j in range(b):
-#       h_matrix = np.zeros(np.shape(w))
-#       h_matrix[i][j] += h
-#       approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
-#   return approximations
+def numerical_approximation_W(x, w, b, y, h):
+  a, b = np.shape(w) # number of rows and columns of the matrix w
+  approximations = [[0 for i in range(b)] for i in range(a)] # initialize to zero matrix
+  for i in range(a):
+    for j in range(b):
+      h_matrix = np.zeros(np.shape(w))
+      h_matrix[i][j] += h # perturbation in the (i, j) direction
+      approximations[i][j] = (cross_entropy(y, predict(x, w + h_matrix, b)) - cross_entropy(y, predict(x, w - h_matrix, b))) / (2 * h)
+  return approximations # two-sided approximation
 
 # def numerical_approximation_b(x, w, b, y, h):
 #   return (cross_entropy(y, predict(x, w, b + h)) - cross_entropy(y, predict(x, w, b-h))) / (2 * h)
@@ -100,21 +89,17 @@ def one_hot(x):
 #   batch_counter = 0
 #   estimation_vs_numerical = {'w' : [], 'b' : []}
   
-#   for i in range(iterations):
-#     x_i = X.loc[i].to_numpy()
-#     y_pred = predict(x_i, w, b)
-#     y = one_hot(Y[i])
-#     db, dw = backprop(y, y_pred, x_i)
-#     estimation_vs_numerical['w'].append((dw - numerical_approximation_W(x_i, w, b, y, h)).flatten())
-#     estimation_vs_numerical['b'].append((db - numerical_approximation_b(x_i, w, b, y, h)).flatten())
-#     w, b = update_parameters(w, b, db, dw, 0.000001)
-#   return estimation_vs_numerical
-    
-    
-# X = train.sample(frac=1).reset_index(drop=True)
-# Y = X['Y']
-# X = X.drop(columns=['Y'])
-# estimation_vs_numerical = run(X, Y)
+  for i in range(iterations):
+    x_i = np.reshape(X[i], 28*28)
+    y_pred = predict(x_i, w, b)
+    y = one_hot(Y[i])
+    db, dw = backprop(y, y_pred, x_i)
+    estimation_vs_numerical['w'].append((dw - numerical_approximation_W(x_i, w, b, y, h)).flatten())
+    estimation_vs_numerical['b'].append((db - numerical_approximation_b(x_i, w, b, y, h)).flatten())
+    w, b = update_parameters(w, b, db, dw, 0.000001)
+  return estimation_vs_numerical
+
+estimation_vs_numerical = run(x_train, y_train)
 
 # def combine(L):
 #   new_L = []
@@ -122,14 +107,24 @@ def one_hot(x):
 #     new_L += elem
 #   return new_L
 
-# fig, ax = plt.subplots(2)
-# ax[0].hist(combine(estimation_vs_numerical['w']))
-# ax[1].hist(combine(estimation_vs_numerical['b']))
-# plt.show()
+fig, ax = plt.subplots(2)
+ax[0].hist(combine(estimation_vs_numerical['w']))
+ax[1].hist(combine(estimation_vs_numerical['b']))
+plt.savefig(fname = "figures/compare-gradients.png", format = "png")
+plt.show()
 
 ## 1-5
-# from itertools import islice
 
+# following two functions are from https://jaykmody.com/blog/stable-softmax/
+def log_softmax(x):
+    # assumes x is a vector
+    x_max = np.max(x)
+    return x - x_max - np.log(np.sum(np.exp(x - x_max)))
+
+def cross_entropy_num_safe(y_hat, y_true):
+    return -log_softmax(y_hat)[y_true]
+
+# from itertools import islice
 # #Function to split data into batchs efficiently
 # def batch_maker(data: dict, SIZE=50):
 #     it = iter(data)
@@ -137,31 +132,39 @@ def one_hot(x):
 #         yield {k:data[k] for k in islice(it, SIZE)}
 
 #
-def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50, ITER=28):
-  w = np.random.rand(ITER, 10)
+def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
+  w = np.random.rand(28*28, 10)
   b = np.random.rand(10)
-  n = len(X)//SIZE
+  n = len(X)//SIZE # floor division
   X_split = np.array_split(X, n)
   Y_split = np.array_split(Y, n)
 
   for i in range(n):
+    X_i = X_split[i]
+    Y_i = Y_split[i]
+    dbTotal = 0
+    dwTotal = 0
     for j in range(SIZE):
-      #for k in range(ITER):
-      x_i = X_split[i][j][0]
+      x_i = np.reshape(X_i[j], 28*28)
       y_pred = predict(x_i, w, b)
-      y = one_hot(Y_split[i][j])
+      y = one_hot(Y_i[j])
       db, dw = backprop(y, y_pred, x_i)
-      w, b = update_parameters(w, b, db, dw, alpha)
+      dbTotal += db
+      dwTotal += dw
+    w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
   
   return w, b
 
 def validate_mbgd(X, Y, w, b):
+
   out = 0
-  for i in range(0, len(X)):
-    y_pred = predict(X[i][0], w, b)
-    out += cross_entropy(Y[i], y_pred)
+  for i in range(len(X)):
+    x_i = np.reshape(X[i], 28*28)
+    y_hat = forward(x_i, w, b)
+    y = Y[i]
+    out += cross_entropy_num_safe(y_hat, y)
     
-  return out
+  return out/len(X)
 
 split_value = int(len(x_train)*0.1)
 
@@ -171,9 +174,9 @@ y_val_5 = y_train[:split_value]
 x_train_5 = x_train[split_value:]
 y_train_5 = y_train[split_value:]
 
-w, b = mini_batch_gradient_descent(x_train_5, y_train)
-accuracy = validate_mbgd(x_val_5, x_val_5, w, b)
-print(w, b, accuracy)
+w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
+avg_loss = validate_mbgd(x_val_5, y_val_5, w, b)
+print("1-5", w, b, avg_loss)
 
 ## 1-6
 
@@ -240,47 +243,75 @@ y_val = y_train[:n_val]
 x_train_nv = x_train[n_val:]
 y_train_nv = y_train[n_val:]
 
-def my_model_mbgd(shape, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
+def my_model_mbgd(
+    x_train,
+    y_train,
+    x_val,
+    y_val,
+    learning_rate,
+    batch_size,
+    epochs = 50,
+    shape = (28, 28),
+    hl_size = 300,
+    n_classes = 10
+):
     """
     Initializes, compiles, and fits a model.
     
     Parameters:
-    - shape: tuple, the shape of the input images ((28,28) for minst)
-    - n: int, the number of nodes in the hidden layer
-    - classes: int, the number of classes (10 for minst)
-    - learning_rate: float, the learning rate
     - x_train: numpy.ndarray
     - y_train: numpy.ndarray
-    - epochs: int
-    - batch_size: int
     - x_val: numpy.ndarray
     - y_val: numpy.ndarray
+    - learning_rate: float, the learning rate
+    - batch_size: int
+    - epochs: int, the number of training epochs (default: 50)
+    - shape: tuple, the shape of the input images (default: (28, 28))
+    - hl_size: int, the number of nodes in the hidden layer (default: 300)
+    - n_classes: int, the number of classes (default: 10)
       
     Returns:
     - The fitted model and the history object.
     """
     
     # initialize model
-    model = Sequential([
-        Input(shape=shape),
-        Flatten(),
-        Dense(n, activation="tanh", name="hidden"), # new layer
-        Dense(classes)
-    ])
+
+    model = Sequential(
+        [
+            Input(shape = shape),
+            Flatten(),
+            Dense(hl_size, activation="tanh"), # new layer
+            Dense(n_classes)
+        ]
+    )
 
     # compile model
-    model.compile(optimizer=SGD(learning_rate=learning_rate),
-                  loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
-                  metrics=["accuracy"]
-                 )
+    model.compile(
+        optimizer=SGD(learning_rate=learning_rate),
+        loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
+        metrics=["accuracy"]
+    )
 
     # fit model
-    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    history = model.fit(
+        x_train,
+        y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_data=(x_val, y_val)
+    )
     
     return model, history
 
-model, history = my_model_mbgd(shape=(28,28),n=300,classes=10,learning_rate=0.01,x_train=x_train_nv,y_train =y_train_nv,epochs=50,batch_size=50,x_val=x_val,y_val=y_val)
-
+model, history = my_model_mbgd(
+    x_train=x_train_nv,
+    y_train=y_train_nv,
+    x_val=x_val,
+    y_val=y_val,
+    learning_rate=0.01,
+    batch_size=50,
+    epochs = 30
+)
 test_loss, test_acc = model.evaluate(x_test, y_test)
 
 acc = history.history['accuracy']
@@ -308,7 +339,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Cross-Entropy Loss')
 plt.title('Training and Validation Loss')
 plt.legend()
-
+plt.savefig(fname = "figures/training-validation.png", format = "png")
 plt.show()
 
 predictions = model.predict(x_test)
@@ -321,9 +352,10 @@ plt.figure(figsize=(10, 5))
 for i, correct in enumerate(pred_correct[:20]):
     plt.subplot(4, 5, i + 1)
     plt.imshow(x_test[correct].reshape(28, 28), cmap='gray')
-    plt.title(f"Pred: {pred_class[correct]}, True: {y_test[correct]}")
+    plt.title(f"Correct: {y_test[correct]}")
     plt.axis('off')
 plt.tight_layout()
+plt.savefig(fname = "figures/correctly-classified.png", format = "png")
 plt.show()
 
 plt.figure(figsize=(10, 5))
@@ -333,38 +365,55 @@ for i, incorrect in enumerate(pred_incorrect[:10]):
     plt.title(f"Pred: {pred_class[incorrect]}, True: {y_test[incorrect]}")
     plt.axis('off')
 plt.tight_layout()
+plt.savefig(fname = "figures/incorrectly-classified.png", format = "png")
 plt.show()
 
 ## 1-9
 
 weights = model.layers[1].weights[0]
 
-interesting_w = [91, 220]
-
-interesting_values = [np.reshape(weights[:, interesting_w[0]], 28*28), np.reshape(weights[:, interesting_w[1]], 28*28)]
+interesting_indices = [295, 224]
+interesting_values = [
+    np.reshape(weights[:, interesting_indices[0]], 28*28),
+    np.reshape(weights[:, interesting_indices[1]], 28*28)
+]
 interesting_values = np.reshape(interesting_values, 2*28*28)
-interesting_limit = max([abs(min(interesting_values)), abs(max(interesting_values))]) # for obtaining a colour bar centred at zero
+interesting_limit = max(
+    [abs(min(interesting_values)), abs(max(interesting_values))]
+) # for obtaining a colour bar centred at zero
 
-plt.figure(figsize = (14, 5))
+plt.figure(figsize=(14, 5))
 
 plt.subplot(1, 2, 1)
-plt.imshow(np.reshape(weights[:, interesting_w[0]], (28, 28)), cmap='coolwarm', vmin = -interesting_limit, vmax = interesting_limit)
-plt.title(interesting_w[0])
+plt.imshow(
+    np.reshape(weights[:, interesting_indices[0]], (28, 28)),
+    cmap='coolwarm',
+    vmin = -interesting_limit,
+    vmax = interesting_limit
+)
+plt.title(interesting_indices[0])
 plt.axis('off')
 plt.colorbar()
 
 plt.subplot(1, 2, 2)
-plt.imshow(np.reshape(weights[:, interesting_w[1]], (28, 28)), cmap='coolwarm', vmin = -interesting_limit, vmax = interesting_limit)
+plt.imshow(
+    np.reshape(weights[:, interesting_indices[1]], (28, 28)),
+    cmap='coolwarm',
+    vmin = -interesting_limit,
+    vmax = interesting_limit
+)
 plt.axis('off')
-plt.title(interesting_w[1])
-
+plt.title(interesting_indices[1])
+plt.savefig(fname = "figures/interesting-weights.png", format = "png")
 plt.show()
 
 interesting_weights = model.layers[2].weights[0]
-interesting_weights = [interesting_weights[interesting_w[0], :].numpy(), interesting_weights[interesting_w[1], :].numpy()]
-
-for k in range(len(interesting_weights)):
-    print("Output weights from hidden neuron " + str(interesting_w[k]) + ":")
+interesting_weights = [
+    interesting_weights[interesting_indices[0], :].numpy(),
+    interesting_weights[interesting_indices[1], :].numpy()
+]
+for k in range(2):
+    print("Output weights from hidden neuron " + str(interesting_indices[k]) + ":")
     for i in range(10):
         print(str(i) + ": " + str(interesting_weights[k][i]))
     print("")
