@@ -17,7 +17,7 @@ for digit in range(10):
         ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
         ax[counter % 10][digit % 10].axis("off")
 plt.savefig(fname = "figures/mnist-samples.png", format = "png")
-plt.show()
+#plt.show()
 
 ## 1-2
 
@@ -107,7 +107,7 @@ fig, ax = plt.subplots(2)
 ax[0].hist(combine(estimation_vs_numerical['w']))
 ax[1].hist(combine(estimation_vs_numerical['b']))
 plt.savefig(fname = "figures/compare-gradients.png", format = "png")
-plt.show()
+#plt.show()
 
 ## 1-5
 
@@ -120,7 +120,7 @@ def log_softmax(x):
 def cross_entropy_num_safe(y_hat, y_true):
     return -log_softmax(y_hat)[y_true]
 
-def log_loss(y_hat, y_true, THRESHOLD=10):
+def log_loss(y_hat, y_true, THRESHOLD=1):
    entropy = cross_entropy_num_safe(y_hat, y_true)
    if entropy >= THRESHOLD:
       return 0 #misclassified
@@ -129,18 +129,29 @@ def log_loss(y_hat, y_true, THRESHOLD=10):
 
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
+  split_value = int(len(X)*0.1)
+
+  x_val = X[:split_value]
+  y_val = Y[:split_value]
+
+  x_train = X[split_value:]
+  y_train = Y[split_value:]
+
   w = np.random.rand(28*28, 10)
   b = np.random.rand(10)
   n = len(X)//SIZE # floor division
-  X_split = np.array_split(X, n)
-  Y_split = np.array_split(Y, n)
+  X_split = np.array_split(x_train, n)
+  Y_split = np.array_split(y_train, n)
+
+  learning_curve = {'data': [], 'labels': []}
+  learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
 
   for i in range(n):
     X_i = X_split[i]
     Y_i = Y_split[i]
     dbTotal = 0
     dwTotal = 0
-    for j in range(SIZE):
+    for j in range(len(X_i)):
       x_j = np.reshape(X_i[j], 28*28)
       y_pred = predict(x_j, w, b)
       loss = log_loss(y_pred, Y_i[j])
@@ -150,8 +161,10 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
         dbTotal += db
         dwTotal += dw
     w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
+    learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
+    learning_curve['labels'].append((w,b))
   
-  return w, b
+  return learning_curve
 
 def validate_mbgd(X, Y, w, b):
 
@@ -164,17 +177,21 @@ def validate_mbgd(X, Y, w, b):
     
   return out/len(X)
 
-split_value = int(len(x_train)*0.1)
+learning_curve = mini_batch_gradient_descent(x_train, y_train)
+data = learning_curve['data']
+nb_of_batches = [i for i in range(len(data))]
 
-x_val_5 = x_train[:split_value]
-y_val_5 = y_train[:split_value]
+fig = plt.figure(clear=True)
+ax = fig.add_subplot(111)
+ax.plot(nb_of_batches, data)
+labels = learning_curve['labels']
+# for i in range(0, len(labels), 100): #attempt to plot the weights and biases on the graph
+#    wb = labels[i]
+#    ax.annotate('%sX+%s' % wb, xy=(i,data[i]), textcoords='data')
 
-x_train_5 = x_train[split_value:]
-y_train_5 = y_train[split_value:]
-
-w, b = mini_batch_gradient_descent(x_train_5, y_train_5)
-avg_loss = validate_mbgd(x_val_5, y_val_5, w, b)
-print("1-5", w, b, avg_loss)
+plt.grid()
+plt.savefig(fname = "figures/1-5-learning-curve.png", format = "png")
+plt.show()
 
 exit()
 
