@@ -23,9 +23,9 @@ plt.show()
 
 from math import log
 
-def softmax(x):
-  e_x = np.exp(x)
-  return e_x / e_x.sum()
+def softmax(x): #numerically stable softmax
+  x = x - np.max(x)
+  return np.exp(x) / np.sum(np.exp(x))
 
 def ReLU(x):
   return [max(0, elem) for elem in x]
