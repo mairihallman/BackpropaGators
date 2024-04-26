@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from keras.datasets import mnist
 
+np.random.seed(2009) # makes 1-1 to 1-6 reproducible
+
+## version info
+import sys
+print(sys.version)
+import tensorflow.version
+print(tensorflow.version.VERSION)
+print(np.version.version)
+
 ## 1-1
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -197,12 +206,12 @@ plt.show()
 
 ## Imports for later parts
 
-from keras.layers import Dense, Flatten, Input
-from keras.losses import SparseCategoricalCrossentropy
-from keras.models import Sequential
-from keras.optimizers import SGD
-from keras.utils import set_random_seed
-# from tensorflow.config.experimental import enable_op_determinism
+from tensorflow.keras.layers import Dense, Flatten, Input, MultiHeadAttention, Reshape, LayerNormalization
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils import set_random_seed
+from tensorflow.config.experimental import enable_op_determinism
 
 # enable_op_determinism()
 set_random_seed(1)
@@ -225,13 +234,13 @@ def my_model(shape, n, classes, x_train, y_train):
     """
     
     # initialize model
-    model = Sequential([
-        Input(shape=shape),
-        Flatten(),
-        Dense(n, activation="tanh"), # new layer
-        Dense(classes)
-    ])
-
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+    
     # compile model
     model.compile(optimizer="adam",
                   loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
@@ -242,7 +251,7 @@ def my_model(shape, n, classes, x_train, y_train):
     model.fit(x_train, y_train)
     
     return model
-
+    
 model_0 = my_model((28,28),300,10,x_train,y_train)
 
 test_loss_0, test_acc_0 = model_0.evaluate(x_test, y_test)
@@ -289,32 +298,20 @@ def my_model_mbgd(
     - The fitted model and the history object.
     """
     
-    # initialize model
-
-    model = Sequential(
-        [
-            Input(shape = shape),
-            Flatten(),
-            Dense(hl_size, activation="tanh"), # new layer
-            Dense(n_classes)
-        ]
-    )
-
-    # compile model
-    model.compile(
-        optimizer=SGD(learning_rate=learning_rate),
-        loss=SparseCategoricalCrossentropy(from_logits=True), # from_logits=True applies softmax to loss
-        metrics=["accuracy"]
-    )
-
-    # fit model
-    history = model.fit(
-        x_train,
-        y_train,
-        epochs=epochs,
-        batch_size=batch_size,
-        validation_data=(x_val, y_val)
-    )
+    # Initialize model
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Dense(hl_size, activation="tanh")(x)
+    outputs = Dense(n_classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    # Compile model
+    model.compile(optimizer=SGD(learning_rate=learning_rate),
+                  loss=SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=["accuracy"])
+    
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
     
     return model, history
 
@@ -385,7 +382,7 @@ plt.show()
 
 ## 1-9
 
-weights = model.layers[1].weights[0]
+weights = model.layers[2].weights[0]
 
 interesting_indices = [295, 224]
 interesting_values = [
@@ -422,13 +419,92 @@ plt.title(interesting_indices[1])
 plt.savefig(fname = "figures/interesting-weights.png", format = "png")
 plt.show()
 
-interesting_weights = model.layers[2].weights[0]
 interesting_weights = [
-    interesting_weights[interesting_indices[0], :].numpy(),
-    interesting_weights[interesting_indices[1], :].numpy()
+    weights[interesting_indices[0], :].numpy(),
+    weights[interesting_indices[1], :].numpy()
 ]
 for k in range(2):
     print("Output weights from hidden neuron " + str(interesting_indices[k]) + ":")
     for i in range(10):
         print(str(i) + ": " + str(interesting_weights[k][i]))
     print("")
+
+## 2 [implementation]
+
+def my_model_attn(shape, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
+    """
+    Initializes, compiles, and fits a model with an attention mechanism layer.
+    
+    Parameters:
+    - shape: tuple, the shape of the input images ((28,28) for mnist)
+    - n: int, the number of nodes in the hidden layer
+    - classes: int, the number of classes (10 for mnist)
+    - learning_rate: float, the learning rate
+    - x_train: numpy.ndarray
+    - y_train: numpy.ndarray
+    - epochs: int
+    - batch_size: int
+    - x_val: numpy.ndarray
+    - y_val: numpy.ndarray
+      
+    Returns:
+    - The fitted model and the history object.
+    """
+    
+    # model layers
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = LayerNormalization()(x) # layer normalization
+    x = Reshape(shape)(x) # reshaping in preparation for multi-headed attention
+    x = MultiHeadAttention(num_heads=2, key_dim=14)(x, x) # multi-headed attention layer
+    x = Flatten()(x)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+
+    # compile model
+    model.compile(optimizer=SGD(learning_rate=learning_rate),
+                  loss=SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=["accuracy"])
+                  
+    # history object (for plotting accuracy and loss)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    
+    return model, history
+
+model_attn, history_attn = my_model_attn(shape=(28,28),n=300,classes=10,learning_rate=0.01,x_train=x_train_nv,y_train =y_train_nv,epochs=39,batch_size=50,x_val=x_val,y_val=y_val)
+
+acc_attn = history_attn.history['accuracy']
+val_acc_attn = history_attn.history['val_accuracy']
+loss_attn = history_attn.history['loss']
+val_loss_attn = history_attn.history['val_loss']
+epochs_range_attn = range(1, len(acc_attn) + 1)
+
+acc_attn = history_attn.history['accuracy']
+val_acc_attn = history_attn.history['val_accuracy']
+loss_attn = history_attn.history['loss']
+val_loss_attn = history_attn.history['val_loss']
+epochs_range_attn = range(1, len(acc_attn) + 1)
+
+plt.figure(figsize=(14, 5))
+
+# plot training and validation accuracy per epoch
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range_attn, acc_attn, label='Training Accuracy')
+plt.plot(epochs_range_attn, val_acc_attn, label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.legend()
+
+# plot training and validation loss per epoch
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range_attn, loss_attn, label='Training Loss')
+plt.plot(epochs_range_attn, val_loss_attn, label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Cross-Entropy Loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+
+plt.show()
