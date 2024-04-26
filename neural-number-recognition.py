@@ -193,8 +193,6 @@ plt.grid()
 plt.savefig(fname = "figures/1-5-learning-curve.png", format = "png")
 plt.show()
 
-exit()
-
 ## 1-6
 
 ## Imports for later parts
