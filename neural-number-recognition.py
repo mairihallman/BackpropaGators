@@ -398,6 +398,7 @@ plt.imshow(
 )
 plt.axis('off')
 plt.title(interesting_indices[1])
+plt.tight_layout()
 plt.savefig(fname = "figures/interesting-weights.png", format = "png")
 plt.show()
 
