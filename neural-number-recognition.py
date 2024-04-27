@@ -25,6 +25,7 @@ for digit in range(10):
         index = np.where(y_train == digit)[0][counter]
         ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
         ax[counter % 10][digit % 10].axis("off")
+fig.tight_layout()
 plt.savefig(fname = "figures/mnist-samples.png", format = "png")
 plt.show()
 
