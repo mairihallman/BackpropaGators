@@ -403,8 +403,8 @@ plt.savefig(fname = "figures/interesting-weights.png", format = "png")
 plt.show()
 
 interesting_weights = [
-    weights[interesting_indices[0], :].numpy(),
-    weights[interesting_indices[1], :].numpy()
+    weights[:, interesting_indices[0]].numpy(),
+    weights[:, interesting_indices[1]].numpy()
 ]
 for k in range(2):
     print("Output weights from hidden neuron " + str(interesting_indices[k]) + ":")
