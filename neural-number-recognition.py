@@ -137,15 +137,17 @@ def log_loss(y_hat, y_true, THRESHOLD=1):
       return 1 #properly classified
 
 def validate_mbgd(X, Y, w, b):
-
+  data = [0,0,0,0,0,0,0,0,0,0]
   out = 0
   for i in range(len(X)):
     x_i = np.reshape(X[i], 28*28)
     y_hat = forward(x_i, w, b)
     y = Y[i]
-    out += log_loss(y_hat, y)
-    
-  return out/len(X)
+    loss = log_loss(y_hat, y)
+    out += loss
+    if loss == 1:
+      data[y] += 1  
+  return out/len(X), data
 
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
@@ -159,7 +161,9 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   X_split = np.array_split(x_train, n)
   Y_split = np.array_split(y_train, n)
   learning_curve = {'data': [], 'labels': []}
-  learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
+  accuracy, data = validate_mbgd(x_val, y_val, w, b)
+  learning_curve['data'].append(accuracy)
+  learning_curve['labels'].append(round(accuracy, 3))
   for i in range(n):
     X_i = X_split[i]
     Y_i = Y_split[i]
@@ -181,10 +185,10 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
     if count == 0:
        count = 1
     w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
-    accuracy = validate_mbgd(x_val, y_val, w, b)
+    accuracy, data = validate_mbgd(x_val, y_val, w, b)
     learning_curve['data'].append(accuracy)
     learning_curve['labels'].append(round(accuracy, 3))
-  return learning_curve
+  return learning_curve, data, w, b
 
 def mini_batch_gradient_descent_for_epoches(x_train, y_train, w, b, alpha=0.01, SIZE=50):
   n = len(x_train)//SIZE # floor division
@@ -232,30 +236,27 @@ def mini_batch_gradient_descent_for_epoches(x_train, y_train, w, b, alpha=0.01, 
 #   learning_curve['labels'].append(round(accuracy, 3))
 #   EPOCHES.append(i+1)
 
-w, b = np.random.rand(28*28, 10), np.random.rand(10)
-learning_curve = {'data': [], 'labels': []}
-accuracy = validate_mbgd(x_val, y_val, w, b)
-learning_curve['data'].append(accuracy)
-learning_curve['labels'].append(round(accuracy, 3))
-EPOCHES = [0]
-for i in range(50):
-  w, b = mini_batch_gradient_descent_for_epoches(x_train_5, y_train_5, w, b)
-  accuracy = validate_mbgd(x_val, y_val, w, b)
-  learning_curve['data'].append(accuracy)
-  learning_curve['labels'].append(round(accuracy, 3))
-  EPOCHES.append(i+1)
+learning_curve, final_accuracy, w, b = mini_batch_gradient_descent(x_train, y_train)
 
-data = learning_curve['data']
+data = learning_curve['data']#[:100]
+batches = [i for i in range(len(data))]
 fig = plt.figure(clear=True)
 ax = fig.add_subplot(111)
-ax.plot(EPOCHES, data)
-labels = learning_curve['labels']
-for i in range(0, len(labels), 5): #attempt to plot the weights and biases on the graph
+ax.plot(batches, data)
+labels = learning_curve['labels']#[:100]
+for i in range(0, len(labels), len(labels)//10): #attempt to plot the weights and biases on the graph
    t = labels[i]
-   ax.annotate('%s' % t, xy=(i,data[i]), textcoords='data')
+   ax.annotate("%d" % t, xy=(i,data[i]), textcoords='data')
 
 plt.grid()
 plt.savefig(fname = "figures/1-5-learning-curve.png", format = "png")
+
+fig = plt.figure(clear=True)
+ax = fig.add_subplot(111)
+nbs = [i for i in range(10)]
+ax.bar(nbs, final_accuracy)
+plt.savefig(fname = "figures/1-5-accuracy-spread.png", format = "png")
+
 plt.show()
 
 ## 1-6
