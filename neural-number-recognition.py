@@ -136,6 +136,17 @@ def log_loss(y_hat, y_true, THRESHOLD=1):
    else:
       return 1 #properly classified
 
+def validate_mbgd(X, Y, w, b):
+
+  out = 0
+  for i in range(len(X)):
+    x_i = np.reshape(X[i], 28*28)
+    y_hat = forward(x_i, w, b)
+    y = Y[i]
+    out += log_loss(y_hat, y)
+    
+  return out/len(X)
+
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   split_value = int(len(X)*0.1)
