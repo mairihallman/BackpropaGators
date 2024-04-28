@@ -150,26 +150,22 @@ def validate_mbgd(X, Y, w, b):
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   split_value = int(len(X)*0.1)
-
   x_val = X[:split_value]
   y_val = Y[:split_value]
-
   x_train = X[split_value:]
   y_train = Y[split_value:]
-
   w, b = np.random.rand(28*28, 10), np.random.rand(10)
   n = len(X)//SIZE # floor division
   X_split = np.array_split(x_train, n)
   Y_split = np.array_split(y_train, n)
-
   learning_curve = {'data': [], 'labels': []}
   learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
-
   for i in range(n):
     X_i = X_split[i]
     Y_i = Y_split[i]
     dbTotal = 0
     dwTotal = 0
+    count = 0
     for j in range(len(X_i)):
       x_j = np.reshape(X_i[j], 28*28)
       y_pred = predict(x_j, w, b)
@@ -179,22 +175,27 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
         db, dw = backprop(y, y_pred, x_j)
         dbTotal += db
         dwTotal += dw
+        count += 1
+      else: #early stop
+         break
+    if count == 0:
+       count = 1
     w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
-    learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
-    learning_curve['labels'].append((w,b))
-  
+    accuracy = validate_mbgd(x_val, y_val, w, b)
+    learning_curve['data'].append(accuracy)
+    learning_curve['labels'].append(round(accuracy, 3))
   return learning_curve
 
 def mini_batch_gradient_descent_for_epoches(x_train, y_train, w, b, alpha=0.01, SIZE=50):
   n = len(x_train)//SIZE # floor division
   X_split = np.array_split(x_train, n)
   Y_split = np.array_split(y_train, n)
-
   for i in range(n):
     X_i = X_split[i]
     Y_i = Y_split[i]
     dbTotal = 0
     dwTotal = 0
+    count = 0
     for j in range(len(X_i)):
       x_j = np.reshape(X_i[j], 28*28)
       y_pred = predict(x_j, w, b)
@@ -204,17 +205,32 @@ def mini_batch_gradient_descent_for_epoches(x_train, y_train, w, b, alpha=0.01, 
         db, dw = backprop(y, y_pred, x_j)
         dbTotal += db
         dwTotal += dw
-    w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
-  
+        count += 1
+    if count == 0:
+       count = 1
+    w, b = update_parameters(w, b, dbTotal/count, dwTotal/count, alpha)
   return w, b
 
-split_value = int(len(x_train)*0.1)
+# split_value = int(len(x_train)*0.1)
 
-x_val = x_train[:split_value]
-y_val = y_train[:split_value]
+# x_val = x_train[:split_value]
+# y_val = y_train[:split_value]
 
-x_train_5 = x_train[split_value:]
-y_train_5 = y_train[split_value:]
+# x_train_5 = x_train[split_value:]
+# y_train_5 = y_train[split_value:]
+
+# w, b = np.random.rand(28*28, 10), np.random.rand(10)
+# learning_curve = {'data': [], 'labels': []}
+# accuracy = validate_mbgd(x_val, y_val, w, b)
+# learning_curve['data'].append(accuracy)
+# learning_curve['labels'].append(round(accuracy, 3))
+# EPOCHES = [0]
+# for i in range(50):
+#   w, b = mini_batch_gradient_descent_for_epoches(x_train_5, y_train_5, w, b)
+#   accuracy = validate_mbgd(x_val, y_val, w, b)
+#   learning_curve['data'].append(accuracy)
+#   learning_curve['labels'].append(round(accuracy, 3))
+#   EPOCHES.append(i+1)
 
 w, b = np.random.rand(28*28, 10), np.random.rand(10)
 learning_curve = {'data': [], 'labels': []}
