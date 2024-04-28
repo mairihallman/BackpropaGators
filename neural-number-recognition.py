@@ -59,7 +59,7 @@ for i in range(len(b1)):
 
 # This is the implementation of the gradient of the cost function for b (db) and w (dw)
 def backprop(y, p, xi):
-  db = y-p
+  db = p-y
   dw = np.matmul(np.array([xi]).T, np.array([db]))
   return db, dw
 
