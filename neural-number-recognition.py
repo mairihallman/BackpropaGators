@@ -157,8 +157,7 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   x_train = X[split_value:]
   y_train = Y[split_value:]
 
-  w = np.random.rand(28*28, 10)
-  b = np.random.rand(10)
+  w, b = np.random.rand(28*28, 10), np.random.rand(10)
   n = len(X)//SIZE # floor division
   X_split = np.array_split(x_train, n)
   Y_split = np.array_split(y_train, n)
@@ -186,24 +185,51 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   
   return learning_curve
 
-def validate_mbgd(X, Y, w, b):
+def mini_batch_gradient_descent_2(x_train, y_train, w, b, alpha=0.01, SIZE=50):
+  n = len(x_train)//SIZE # floor division
+  X_split = np.array_split(x_train, n)
+  Y_split = np.array_split(y_train, n)
 
-  out = 0
-  for i in range(len(X)):
-    x_i = np.reshape(X[i], 28*28)
-    y_hat = forward(x_i, w, b)
-    y = Y[i]
-    out += log_loss(y_hat, y)
-    
-  return out/len(X)
+  for i in range(n):
+    X_i = X_split[i]
+    Y_i = Y_split[i]
+    dbTotal = 0
+    dwTotal = 0
+    for j in range(len(X_i)):
+      x_j = np.reshape(X_i[j], 28*28)
+      y_pred = predict(x_j, w, b)
+      loss = log_loss(y_pred, Y_i[j])
+      if loss == 0: #if predictor isn't right, we find the gradient 
+        y = one_hot(Y_i[j])
+        db, dw = backprop(y, y_pred, x_j)
+        dbTotal += db
+        dwTotal += dw
+    w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
+  
+  return w, b
 
-learning_curve = mini_batch_gradient_descent(x_train, y_train)
+split_value = int(len(x_train)*0.1)
+
+x_val = x_train[:split_value]
+y_val = y_train[:split_value]
+
+x_train_5 = x_train[split_value:]
+y_train_5 = y_train[split_value:]
+
+w, b = np.random.rand(28*28, 10), np.random.rand(10)
+learning_curve = {'data': [], 'labels': []}
+learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
+learning_curve['labels'].append((w,b))
+EPOCHES = 10
+for i in range(EPOCHES):
+  w, b = mini_batch_gradient_descent_2(x_train_5, y_train_5, w, b)
+  learning_curve['data'].append(validate_mbgd(x_val, y_val, w, b))
+  learning_curve['labels'].append((w,b))
+
 data = learning_curve['data']
-nb_of_batches = [i for i in range(len(data))]
-
 fig = plt.figure(clear=True)
 ax = fig.add_subplot(111)
-ax.plot(nb_of_batches, data)
+ax.plot(EPOCHES+1, data)
 labels = learning_curve['labels']
 # for i in range(0, len(labels), 100): #attempt to plot the weights and biases on the graph
 #    wb = labels[i]
