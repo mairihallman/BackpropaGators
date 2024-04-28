@@ -323,37 +323,50 @@ model, history = my_model_mbgd(
     y_val=y_val,
     learning_rate=0.01,
     batch_size=50,
-    epochs = 30
+    epochs = 35
 )
-test_loss, test_acc = model.evaluate(x_test, y_test)
 
-acc = history.history['accuracy']
-val_acc = history.history['val_accuracy']
-loss = history.history['loss']
-val_loss = history.history['val_loss']
-epochs_range = range(1, len(acc) + 1)
+def history_plot(hist,title,saveas):
+  """
+  Creates side-by-side plots of train/test accuracy and loss.
+  
+  Parameters:
+  - hist: tf.keras.callbacks.History()
+  - title: str, the main title for both plots
+  - saveas: str, name of image to save to figures folder
+  """
+  
+  acc = hist.history['accuracy']
+  val_acc = hist.history['val_accuracy']
+  loss = hist.history['loss']
+  val_loss = hist.history['val_loss']
+  epochs_range = range(1,len(acc)+1)
 
-plt.figure(figsize=(14, 5))
+  plt.figure()
+  plt.suptitle(title)
+  
+  # plot training and validation accuracy by epoch
+  plt.subplot(1, 2, 1)
+  plt.plot(epochs_range, acc, label='Training Accuracy')
+  plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+  plt.xlabel('Epoch')
+  plt.ylabel('Accuracy')
+  plt.title('Training and Validation Accuracy')
+  plt.legend()
 
-# Plot training and validation accuracy per epoch
-plt.subplot(1, 2, 1)
-plt.plot(epochs_range, acc, label='Training Accuracy')
-plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.title('Training and Validation Accuracy')
-plt.legend()
+  # plot training and validation loss by epoch
+  plt.subplot(1, 2, 2)
+  plt.plot(epochs_range, loss, label='Training Loss')
+  plt.plot(epochs_range, val_loss, label='Validation Loss')
+  plt.xlabel('Epoch')
+  plt.ylabel('Cross-Entropy Loss')
+  plt.title('Training and Validation Loss')
+  plt.legend()
+  plt.savefig(fname = f'figures/{saveas}.png', format = "png")
 
-# Plot training and validation loss per epoch
-plt.subplot(1, 2, 2)
-plt.plot(epochs_range, loss, label='Training Loss')
-plt.plot(epochs_range, val_loss, label='Validation Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Cross-Entropy Loss')
-plt.title('Training and Validation Loss')
-plt.legend()
-plt.savefig(fname = "figures/training-validation.png", format = "png")
-plt.show()
+  plt.show()
+  
+history_plot(hist=history,title='Accuracy and Loss with Mini-Batch Gradient Descent',saveas='training-validation')
 
 predictions = model.predict(x_test)
 pred_class = np.argmax(predictions, axis=1)
@@ -433,12 +446,14 @@ for k in range(2):
 
 ## 2 [implementation]
 
-def my_model_attn(shape, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
+def my_model_attn(shape, num_heads, key_dim, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
     """
     Initializes, compiles, and fits a model with an attention mechanism layer.
     
     Parameters:
     - shape: tuple, the shape of the input images ((28,28) for mnist)
+    - num_heads: integer, number of heads in the attention mechanism
+    - key_dim: integer
     - n: int, the number of nodes in the hidden layer
     - classes: int, the number of classes (10 for mnist)
     - learning_rate: float, the learning rate
@@ -458,7 +473,7 @@ def my_model_attn(shape, n, classes, learning_rate, x_train, y_train, epochs, ba
     x = Flatten()(inputs)
     x = LayerNormalization()(x) # layer normalization
     x = Reshape(shape)(x) # reshaping in preparation for multi-headed attention
-    x = MultiHeadAttention(num_heads=2, key_dim=14)(x, x) # multi-headed attention layer
+    x = MultiHeadAttention(num_heads=num_heads, key_dim=key_dim)(x, x) # multi-headed attention layer; first x represents queries, second represents key/value pairs
     x = Flatten()(x)
     x = Dense(n, activation="tanh")(x)
     outputs = Dense(classes)(x)
@@ -475,38 +490,150 @@ def my_model_attn(shape, n, classes, learning_rate, x_train, y_train, epochs, ba
     
     return model, history
 
-model_attn, history_attn = my_model_attn(shape=(28,28),n=300,classes=10,learning_rate=0.01,x_train=x_train_nv,y_train =y_train_nv,epochs=39,batch_size=50,x_val=x_val,y_val=y_val)
+model_attn, history_attn = my_model_attn(
+    shape=(28,28),
+    num_heads=2,
+    key_dim=14,
+    n=300,
+    classes=10,
+    learning_rate=0.01,
+    x_train=x_train_nv,
+    y_train =y_train_nv,
+    epochs=35,
+    batch_size=50,
+    x_val=x_val,
+    y_val=y_val
+    )
 
-acc_attn = history_attn.history['accuracy']
-val_acc_attn = history_attn.history['val_accuracy']
-loss_attn = history_attn.history['loss']
-val_loss_attn = history_attn.history['val_loss']
-epochs_range_attn = range(1, len(acc_attn) + 1)
+history_plot(
+    hist=history_attn,
+    title='Accuracy and Loss with Attention Mechanism and Layer Normalization',
+    saveas='training-validation-attn'
+    )
 
-acc_attn = history_attn.history['accuracy']
-val_acc_attn = history_attn.history['val_accuracy']
-loss_attn = history_attn.history['loss']
-val_loss_attn = history_attn.history['val_loss']
-epochs_range_attn = range(1, len(acc_attn) + 1)
+## 2 [ablative analysis]
 
-plt.figure(figsize=(14, 5))
+# without layer normalization
 
-# plot training and validation accuracy per epoch
-plt.subplot(1, 2, 1)
-plt.plot(epochs_range_attn, acc_attn, label='Training Accuracy')
-plt.plot(epochs_range_attn, val_acc_attn, label='Validation Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.title('Training and Validation Accuracy')
-plt.legend()
+def my_model_attn_1(shape, num_heads, key_dim, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
+    """
+    Same as my_model_attn, but without layer normalization.
+    
+    Parameters:
+    - shape: tuple, the shape of the input images ((28,28) for mnist)
+    - num_heads: integer, number of heads in the attention mechanism
+    - key_dim: integer
+    - n: int, the number of nodes in the hidden layer
+    - classes: int, the number of classes (10 for mnist)
+    - learning_rate: float, the learning rate
+    - x_train: numpy.ndarray
+    - y_train: numpy.ndarray
+    - epochs: int
+    - batch_size: int
+    - x_val: numpy.ndarray
+    - y_val: numpy.ndarray
+      
+    Returns:
+    - The fitted model and the history object.
+    """
+    
+    # model layers
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = Reshape(shape)(x) # reshaping in preparation for multi-headed attention
+    x = MultiHeadAttention(num_heads=num_heads, key_dim=key_dim)(x, x) # multi-headed attention layer; first x represents queries, second represents key/value pairs
+    x = Flatten()(x)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
 
-# plot training and validation loss per epoch
-plt.subplot(1, 2, 2)
-plt.plot(epochs_range_attn, loss_attn, label='Training Loss')
-plt.plot(epochs_range_attn, val_loss_attn, label='Validation Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Cross-Entropy Loss')
-plt.title('Training and Validation Loss')
-plt.legend()
+    # compile model
+    model.compile(optimizer=SGD(learning_rate=learning_rate),
+                  loss=SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=["accuracy"])
+                  
+    # history object (for plotting accuracy and loss)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    
+    return model, history
 
-plt.show()
+model_attn_1, history_attn_1 = my_model_attn_1(
+    shape=(28,28),
+    num_heads=2,
+    key_dim=14,
+    n=300,
+    classes=10,
+    learning_rate=0.01,
+    x_train=x_train_nv,
+    y_train =y_train_nv,
+    epochs=35,
+    batch_size=50,
+    x_val=x_val,
+    y_val=y_val
+    )
+
+history_plot(
+    hist=history_attn_1,
+    title='Accuracy and Loss with Layer Normalization Removed',
+    saveas='training-validation-attn-ablative-1'
+    )
+
+# without attention mechanism
+
+def my_model_attn_2(shape, n, classes, learning_rate, x_train, y_train, epochs, batch_size, x_val, y_val):
+    """
+    Same as my_model_attn, but without the attention mechanism (or preliminary reshaping).
+    
+    Parameters:
+    - shape: tuple, the shape of the input images ((28,28) for mnist)
+    - num_heads: integer, number of heads in the attention mechanism
+    - key_dim: integer
+    - n: int, the number of nodes in the hidden layer
+    - classes: int, the number of classes (10 for mnist)
+    - learning_rate: float, the learning rate
+    - x_train: numpy.ndarray
+    - y_train: numpy.ndarray
+    - epochs: int
+    - batch_size: int
+    - x_val: numpy.ndarray
+    - y_val: numpy.ndarray
+      
+    Returns:
+    - The fitted model and the history object.
+    """
+    
+    # model layers
+    inputs = Input(shape=shape)
+    x = Flatten()(inputs)
+    x = LayerNormalization()(x) # layer normalization
+    x = Flatten()(x)
+    x = Dense(n, activation="tanh")(x)
+    outputs = Dense(classes)(x)
+    
+    model = Model(inputs=inputs, outputs=outputs)
+
+    # compile model
+    model.compile(optimizer=SGD(learning_rate=learning_rate),
+                  loss=SparseCategoricalCrossentropy(from_logits=True),
+                  metrics=["accuracy"])
+                  
+    # history object (for plotting accuracy and loss)
+    history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(x_val, y_val))
+    
+    return model, history
+
+model_attn_2, history_attn_2 = my_model_attn_2(
+    shape=(28,28),
+    n=300,
+    classes=10,
+    learning_rate=0.01,
+    x_train=x_train_nv,
+    y_train =y_train_nv,
+    epochs=35,
+    batch_size=50,
+    x_val=x_val,
+    y_val=y_val
+    )
+
+history_plot(hist=history_attn_1,title='Accuracy and Loss with Attention Mechanism Removed',saveas='training-validation-attn-ablative-2')
