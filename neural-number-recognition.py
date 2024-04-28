@@ -1,7 +1,7 @@
 ## Imports for early parts
 import matplotlib.pyplot as plt
 import numpy as np
-from keras.datasets import mnist
+from tensorflow.keras.datasets import mnist
 
 np.random.seed(2009) # makes 1-1 to 1-6 reproducible
 
@@ -26,7 +26,7 @@ for digit in range(10):
         ax[counter % 10][digit % 10].imshow(x_train[index].reshape((28,28)), cmap='gray')
         ax[counter % 10][digit % 10].axis("off")
 plt.savefig(fname = "figures/mnist-samples.png", format = "png")
-#plt.show()
+plt.show()
 
 ## 1-2
 
@@ -116,7 +116,7 @@ fig, ax = plt.subplots(2)
 ax[0].hist(combine(estimation_vs_numerical['w']))
 ax[1].hist(combine(estimation_vs_numerical['b']))
 plt.savefig(fname = "figures/compare-gradients.png", format = "png")
-#plt.show()
+plt.show()
 
 ## 1-5
 
@@ -213,7 +213,7 @@ from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.utils import set_random_seed
 from tensorflow.config.experimental import enable_op_determinism
 
-# enable_op_determinism()
+enable_op_determinism()
 set_random_seed(1)
 
 ## 1-7
