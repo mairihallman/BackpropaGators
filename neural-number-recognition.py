@@ -246,7 +246,7 @@ ax.plot(batches, data)
 labels = learning_curve['labels']#[:100]
 for i in range(0, len(labels), len(labels)//10): #attempt to plot the weights and biases on the graph
    t = labels[i]
-   ax.annotate("%d" % t, xy=(i,data[i]), textcoords='data')
+   ax.annotate("%.3f" % t, xy=(i,data[i]), textcoords='data')
 
 plt.grid()
 plt.savefig(fname = "figures/1-5-learning-curve.png", format = "png")
