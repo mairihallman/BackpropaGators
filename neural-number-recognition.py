@@ -150,6 +150,20 @@ def validate_mbgd(X, Y, w, b):
       data[y] += 1  
   return out/len(X), data
 
+def example_generator(X, Y, w, b):
+  correct = []
+  incorrect = []
+  for i in range(len(X)):
+    x_i = np.reshape(X[i], 28*28)
+    y_hat = forward(x_i, w, b)
+    y = Y[i]
+    loss = log_loss(y_hat, y)
+    if loss == 1:
+      correct.append((X[i], np.argmax(y_hat)))  
+    else:
+      incorrect.append((X[i], np.argmax(y_hat)))  
+  return correct, incorrect
+
 #
 def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   split_value = int(len(X)*0.1)
@@ -182,11 +196,9 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
         dbTotal += db
         dwTotal += dw
         count += 1
-      else: #early stop
-         break
     if count == 0:
        count = 1
-    w, b = update_parameters(w, b, dbTotal/SIZE, dwTotal/SIZE, alpha)
+    w, b = update_parameters(w, b, dbTotal/count, dwTotal/count, alpha)
     accuracy, data = validate_mbgd(x_val, y_val, w, b)
     learning_curve['data'].append(accuracy)
     learning_curve['labels'].append(round(accuracy, 3))
@@ -241,13 +253,13 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
 
 learning_curve, final_accuracy = mini_batch_gradient_descent(x_train, y_train)
 
-data = learning_curve['data']#[:100]
+data = learning_curve['data']
 batches = [i for i in range(len(data))]
 fig = plt.figure(clear=True)
 ax = fig.add_subplot(111)
 ax.plot(batches, data)
-labels = learning_curve['labels']#[:100]
-for i in range(0, len(labels), len(labels)//10): #attempt to plot the weights and biases on the graph
+labels = learning_curve['labels']
+for i in range(0, len(labels), len(labels)//10): #annotating 10 points their accuracy value
    t = labels[i]
    ax.annotate("%.3f" % t, xy=(i,data[i]), textcoords='data')
 
@@ -259,6 +271,33 @@ ax = fig.add_subplot(111)
 nbs = [i for i in range(10)]
 ax.bar(nbs, final_accuracy)
 plt.savefig(fname = "figures/1-5-accuracy-spread.png", format = "png")
+
+w, b = learning_curve['weights and biases'][-1]
+correct_examples, incorrect_examples = example_generator(x_train, y_train, w, b)
+
+fig, ax = plt.subplots(nrows=4, ncols=5, dpi=200)
+for i in range(20):
+    pair = correct_examples[i]
+    row = i // 5
+    col = i % 5
+    ax[row, col].imshow(pair[0].reshape((28, 28)), cmap='gray')
+    ax[row, col].axis("off")
+    ax[row, col].set_title(str(pair[1]))
+
+fig.tight_layout()
+plt.savefig(fname = "figures/1-5-correct-classifications.png", format = "png")
+
+fig, ax = plt.subplots(nrows=2, ncols=5, dpi=200)
+for i in range(10):
+    pair = incorrect_examples[i]
+    row = i // 5
+    col = i % 5
+    ax[row, col].imshow(pair[0].reshape((28, 28)), cmap='gray')
+    ax[row, col].axis("off")
+    ax[row, col].set_title(str(pair[1]))
+
+fig.tight_layout()
+plt.savefig(fname = "figures/1-5-incorrect-classifications.png", format = "png")
 
 plt.show()
 
