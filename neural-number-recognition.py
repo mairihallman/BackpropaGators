@@ -666,4 +666,4 @@ model_attn_2, history_attn_2 = my_model_attn_2(
 
 test_loss_attn_2, test_acc_attn_2 = model_attn_2.evaluate(x_test, y_test)
 
-history_plot(hist=history_attn_1,title='Accuracy and Loss with Attention Mechanism Removed',saveas='training-validation-attn-ablative-2')
+history_plot(hist=history_attn_2,title='Accuracy and Loss with Layer Normalization Removed',saveas='training-validation-attn-ablative-2')
