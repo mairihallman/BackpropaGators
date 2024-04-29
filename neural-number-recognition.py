@@ -161,7 +161,7 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   n = len(X)//SIZE # floor division
   X_split = np.array_split(x_train, n)
   Y_split = np.array_split(y_train, n)
-  learning_curve = {'data': [], 'labels': []}
+  learning_curve = {'data': [], 'labels': [], 'weights and biases': []}
   accuracy, data = validate_mbgd(x_val, y_val, w, b)
   learning_curve['data'].append(accuracy)
   learning_curve['labels'].append(round(accuracy, 3))
@@ -189,7 +189,8 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
     accuracy, data = validate_mbgd(x_val, y_val, w, b)
     learning_curve['data'].append(accuracy)
     learning_curve['labels'].append(round(accuracy, 3))
-  return learning_curve, data, w, b
+    learning_curve['weights and biases'].append((w,b))
+  return learning_curve, data
 
 def mini_batch_gradient_descent_for_epoches(x_train, y_train, w, b, alpha=0.01, SIZE=50):
   n = len(x_train)//SIZE # floor division
@@ -237,7 +238,7 @@ def mini_batch_gradient_descent_for_epoches(x_train, y_train, w, b, alpha=0.01, 
 #   learning_curve['labels'].append(round(accuracy, 3))
 #   EPOCHES.append(i+1)
 
-learning_curve, final_accuracy, w, b = mini_batch_gradient_descent(x_train, y_train)
+learning_curve, final_accuracy = mini_batch_gradient_descent(x_train, y_train)
 
 data = learning_curve['data']#[:100]
 batches = [i for i in range(len(data))]
@@ -262,12 +263,13 @@ plt.show()
 
 ## 1-6
 
+weights_and_biases = learning_curve['weights and biases']
 o_vec = np.zeros(shape = (10, 28, 28))
 for digit in range(10):
     for pixel in range(28*28):
-        o_vec[digit, pixel // 28, pixel % 28] = labels[-1][0][pixel][digit]
+        o_vec[digit, pixel // 28, pixel % 28] = weights_and_biases[-1][0][pixel][digit]
 
-l = np.reshape(labels[-1][0], newshape = 10*28*28)
+l = np.reshape(weights_and_biases[-1][0], newshape = 10*28*28)
 limit = max([abs(max(l)), abs(min(l))])
 nrows = 2
 ncols = 5
@@ -281,6 +283,7 @@ for digit in range(10):
         vmax = limit
     )
     ax[digit // ncols][digit % ncols].axis("off")
+
 fig.tight_layout()
 plt.savefig(fname = "figures/network-weights.png", format = "png")
 
