@@ -326,6 +326,8 @@ model, history = my_model_mbgd(
     epochs = 35
 )
 
+test_loss, test_acc = model.evaluate(x_test, y_test)
+
 def history_plot(hist,title,saveas):
   """
   Creates side-by-side plots of train/test accuracy and loss.
@@ -505,6 +507,8 @@ model_attn, history_attn = my_model_attn(
     y_val=y_val
     )
 
+test_loss_attn, test_acc_attn = model_attn.evaluate(x_test, y_test)
+
 history_plot(
     hist=history_attn,
     title='Accuracy and Loss with Attention Mechanism and Layer Normalization',
@@ -573,6 +577,8 @@ model_attn_1, history_attn_1 = my_model_attn_1(
     y_val=y_val
     )
 
+test_loss_attn_1, test_acc_attn_1 = model_attn_1.evaluate(x_test, y_test)
+
 history_plot(
     hist=history_attn_1,
     title='Accuracy and Loss with Layer Normalization Removed',
@@ -635,5 +641,7 @@ model_attn_2, history_attn_2 = my_model_attn_2(
     x_val=x_val,
     y_val=y_val
     )
+
+test_loss_attn_2, test_acc_attn_2 = model_attn_2.evaluate(x_test, y_test)
 
 history_plot(hist=history_attn_1,title='Accuracy and Loss with Attention Mechanism Removed',saveas='training-validation-attn-ablative-2')
