@@ -155,7 +155,7 @@ def example_generator(X, Y, w, b):
   return correct, incorrect
 
 #
-def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
+def mini_batch_gradient_descent(X, Y, alpha=0.024, SIZE=10):
   split_value = int(len(X)*0.1)
   x_val = X[:split_value]
   y_val = Y[:split_value]
