@@ -165,6 +165,7 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
   accuracy, data = validate_mbgd(x_val, y_val, w, b)
   learning_curve['data'].append(accuracy)
   learning_curve['labels'].append(round(accuracy, 3))
+  learning_curve['weights and biases'].append((w,b))
   for i in range(n):
     X_i = X_split[i]
     Y_i = Y_split[i]
