@@ -120,22 +120,12 @@ plt.savefig(fname = "figures/compare-gradients.png", format = "png")
 plt.show()
 
 ## 1-5
-
-# following two functions are from https://jaykmody.com/blog/stable-softmax/
-def log_softmax(x):
-    # assumes x is a vector
-    x_max = np.max(x)
-    return x - x_max - np.log(np.sum(np.exp(x - x_max)))
-
-def cross_entropy_num_safe(y_hat, y_true):
-    return -log_softmax(y_hat)[y_true]
-
-def log_loss(y_hat, y_true, THRESHOLD=1):
-   entropy = cross_entropy_num_safe(y_hat, y_true)
-   if entropy >= THRESHOLD:
-      return 0 #misclassified
-   else:
+   
+def zero_one_loss(y_hat, y_true):
+   if np.argmax(y_hat) == y_true:
       return 1 #properly classified
+   else:
+      return 0 #misclassified
 
 def validate_mbgd(X, Y, w, b):
   data = [0,0,0,0,0,0,0,0,0,0]
@@ -144,7 +134,7 @@ def validate_mbgd(X, Y, w, b):
     x_i = np.reshape(X[i], 28*28)
     y_hat = forward(x_i, w, b)
     y = Y[i]
-    loss = log_loss(y_hat, y)
+    loss = zero_one_loss(y_hat, y)
     out += loss
     if loss == 1:
       data[y] += 1  
@@ -157,7 +147,7 @@ def example_generator(X, Y, w, b):
     x_i = np.reshape(X[i], 28*28)
     y_hat = forward(x_i, w, b)
     y = Y[i]
-    loss = log_loss(y_hat, y)
+    loss = zero_one_loss(y_hat, y)
     if loss == 1:
       correct.append((X[i], np.argmax(y_hat)))  
     else:
@@ -189,7 +179,7 @@ def mini_batch_gradient_descent(X, Y, alpha=0.01, SIZE=50):
     for j in range(len(X_i)):
       x_j = np.reshape(X_i[j], 28*28)
       y_pred = predict(x_j, w, b)
-      loss = log_loss(y_pred, Y_i[j])
+      loss = zero_one_loss(y_pred, Y_i[j])
       if loss == 0: #if predictor isn't right, we find the gradient 
         y = one_hot(Y_i[j])
         db, dw = backprop(y, y_pred, x_j)
