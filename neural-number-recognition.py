@@ -205,6 +205,28 @@ plt.show()
 
 ## 1-6
 
+o_vec = np.zeros(shape = (10, 28, 28))
+for digit in range(10):
+    for pixel in range(28*28):
+        o_vec[digit, pixel // 28, pixel % 28] = labels[-1][0][pixel][digit]
+
+l = np.reshape(labels[-1][0], newshape = 10*28*28)
+limit = max([abs(max(l)), abs(min(l))])
+nrows = 2
+ncols = 5
+fig, ax = plt.subplots(nrows = nrows, ncols = ncols, dpi = 200)
+
+for digit in range(10):
+    ax[digit // ncols][digit % ncols].imshow(
+        o_vec[digit],
+        cmap = "coolwarm",
+        vmin = -limit,
+        vmax = limit
+    )
+    ax[digit // ncols][digit % ncols].axis("off")
+fig.tight_layout()
+plt.savefig(fname = "figures/network-weights.png", format = "png")
+
 ## Imports for later parts
 
 from tensorflow.keras.layers import Dense, Flatten, Input, MultiHeadAttention, Reshape, LayerNormalization
