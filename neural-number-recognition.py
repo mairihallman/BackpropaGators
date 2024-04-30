@@ -33,7 +33,8 @@ plt.show()
 
 from math import log
 
-def softmax(x): #numerically stable softmax
+#numerically stable softmax taken from https://jaykmody.com/blog/stable-softmax/
+def softmax(x):
   x = x - np.max(x)
   return np.exp(x) / np.sum(np.exp(x))
 
@@ -120,19 +121,27 @@ plt.savefig(fname = "figures/compare-gradients.png", format = "png")
 plt.show()
 
 ## 1-5
-   
+
+#Numerically stable function taken from https://jaykmody.com/blog/stable-softmax/
+def log_softmax(x):
+    # assumes x is a vector
+    x_max = np.max(x)
+    return x - x_max - np.log(np.sum(np.exp(x - x_max)))
+
+#Loss used to determine whether a digit was correctly classified
 def zero_one_loss(y_hat, y_true):
    if np.argmax(y_hat) == y_true:
       return 1 #properly classified
    else:
       return 0 #misclassified
 
+#Function used to check the accuracy of a weight and bias
 def validate_mbgd(X, Y, w, b):
   data = [0,0,0,0,0,0,0,0,0,0]
   out = 0
   for i in range(len(X)):
     x_i = np.reshape(X[i], 28*28)
-    y_hat = forward(x_i, w, b)
+    y_hat = predict(x_i, w, b)
     y = Y[i]
     loss = zero_one_loss(y_hat, y)
     out += loss
@@ -140,12 +149,88 @@ def validate_mbgd(X, Y, w, b):
       data[y] += 1  
   return out/len(X), data
 
+def mini_batch_gradient_descent(X, Y, alpha=0.024, SIZE=10):
+  #split data into training and validation sets
+  split_value = int(len(X)*0.1)
+  x_val = X[:split_value]
+  y_val = Y[:split_value]
+  x_train = X[split_value:]
+  y_train = Y[split_value:]
+
+  #split the training set into batches
+  w, b = np.random.rand(28*28, 10), np.random.rand(10)
+  n = len(X)//SIZE # floor division
+  X_split = np.array_split(x_train, n)
+  Y_split = np.array_split(y_train, n)
+
+  #initiate the output dictionary
+  learning_curve = {'data': [], 'avg -log': [], 'labels': [], 'weights and biases': []}
+  accuracy, data = validate_mbgd(x_val, y_val, w, b)
+  learning_curve['data'].append(accuracy)
+  learning_curve['labels'].append(round(accuracy, 3))
+  learning_curve['weights and biases'].append((w,b))
+
+  #loop through the batches
+  for i in range(n):
+    X_i = X_split[i]
+    Y_i = Y_split[i]
+    dbTotal = 0
+    dwTotal = 0
+    count = 0 #number of time it takes the gradient
+    log_softmax_total = 0
+    
+    #loop through each batch
+    for j in range(len(X_i)):
+      x_j = np.reshape(X_i[j], 28*28)
+      y_pred = predict(x_j, w, b)
+      y_true = Y_i[j]
+      loss = zero_one_loss(y_pred, y_true)
+      if loss == 0: #if prediction isn't right, we find the gradient 
+        y = one_hot(y_true)
+        db, dw = backprop(y, y_pred, x_j)
+        dbTotal += db
+        dwTotal += dw
+        count += 1
+      else:
+        log_softmax_total += log_softmax(y_pred)[y_true]
+    
+    if count == 0: #avoiding the dividing by 0 case
+       count = 1
+    
+    w, b = update_parameters(w, b, dbTotal/count, dwTotal/count, alpha)
+    accuracy, data = validate_mbgd(x_val, y_val, w, b)
+    learning_curve['data'].append(accuracy)
+    learning_curve['avg -log'].append(-log_softmax_total/len(X_i))
+    learning_curve['labels'].append(round(accuracy, 3))
+    learning_curve['weights and biases'].append((w,b))
+  return learning_curve, data
+
+learning_curve, final_accuracy = mini_batch_gradient_descent(x_train, y_train)
+
+data = learning_curve['data']
+neg_log = learning_curve['avg -log']
+batches = [i for i in range(len(data))]
+fig = plt.figure(clear=True)
+ax = fig.add_subplot(111)
+ax.plot(batches, data, label='Accuracy')
+ax.plot(batches, neg_log, label='Average Confidence of Correct Answers')
+labels = learning_curve['labels']
+for i in range(0, len(labels), len(labels)//10): #annotating 10 points their accuracy value
+   t = labels[i]
+   ax.annotate("%.3f" % t, xy=(i,data[i]), textcoords='data')
+
+plt.grid()
+ax.set_xlabel('Nb of Batches')
+plt.title("Learning Curve over the Course of Batches")
+plt.savefig(fname = "figures/1-5-learning-curve.png", format = "png")
+
+#Function to generate examples of correctly and incorrectly classified digits
 def example_generator(X, Y, w, b):
   correct = []
   incorrect = []
   for i in range(len(X)):
     x_i = np.reshape(X[i], 28*28)
-    y_hat = forward(x_i, w, b)
+    y_hat = predict(x_i, w, b)
     y = Y[i]
     loss = zero_one_loss(y_hat, y)
     if loss == 1:
@@ -154,69 +239,16 @@ def example_generator(X, Y, w, b):
       incorrect.append((X[i], np.argmax(y_hat)))  
   return correct, incorrect
 
-#
-def mini_batch_gradient_descent(X, Y, alpha=0.024, SIZE=10):
-  split_value = int(len(X)*0.1)
-  x_val = X[:split_value]
-  y_val = Y[:split_value]
-  x_train = X[split_value:]
-  y_train = Y[split_value:]
-  w, b = np.random.rand(28*28, 10), np.random.rand(10)
-  n = len(X)//SIZE # floor division
-  X_split = np.array_split(x_train, n)
-  Y_split = np.array_split(y_train, n)
-  learning_curve = {'data': [], 'labels': [], 'weights and biases': []}
-  accuracy, data = validate_mbgd(x_val, y_val, w, b)
-  learning_curve['data'].append(accuracy)
-  learning_curve['labels'].append(round(accuracy, 3))
-  learning_curve['weights and biases'].append((w,b))
-  for i in range(n):
-    X_i = X_split[i]
-    Y_i = Y_split[i]
-    dbTotal = 0
-    dwTotal = 0
-    count = 0
-    for j in range(len(X_i)):
-      x_j = np.reshape(X_i[j], 28*28)
-      y_pred = predict(x_j, w, b)
-      loss = zero_one_loss(y_pred, Y_i[j])
-      if loss == 0: #if predictor isn't right, we find the gradient 
-        y = one_hot(Y_i[j])
-        db, dw = backprop(y, y_pred, x_j)
-        dbTotal += db
-        dwTotal += dw
-        count += 1
-    if count == 0:
-       count = 1
-    w, b = update_parameters(w, b, dbTotal/count, dwTotal/count, alpha)
-    accuracy, data = validate_mbgd(x_val, y_val, w, b)
-    learning_curve['data'].append(accuracy)
-    learning_curve['labels'].append(round(accuracy, 3))
-    learning_curve['weights and biases'].append((w,b))
-  return learning_curve, data
-
-learning_curve, final_accuracy = mini_batch_gradient_descent(x_train, y_train)
-
-data = learning_curve['data']
-batches = [i for i in range(len(data))]
-fig = plt.figure(clear=True)
-ax = fig.add_subplot(111)
-ax.plot(batches, data)
-labels = learning_curve['labels']
-for i in range(0, len(labels), len(labels)//10): #annotating 10 points their accuracy value
-   t = labels[i]
-   ax.annotate("%.3f" % t, xy=(i,data[i]), textcoords='data')
-
-plt.grid()
-plt.savefig(fname = "figures/1-5-learning-curve.png", format = "png")
-
 fig = plt.figure(clear=True)
 ax = fig.add_subplot(111)
 nbs = [i for i in range(10)]
 ax.bar(nbs, final_accuracy)
+ax.set_xlabel('Digits')
+ax.set_ylabel('Nb of Correct Classifications')
+plt.title("Correct Classifications per Number")
 plt.savefig(fname = "figures/1-5-accuracy-spread.png", format = "png")
 
-w, b = learning_curve['weights and biases'][-1]
+w, b = learning_curve['weights and biases'][-1] #get the best weight and bias
 correct_examples, incorrect_examples = example_generator(x_train, y_train, w, b)
 
 fig, ax = plt.subplots(nrows=4, ncols=5, dpi=200)
@@ -226,9 +258,10 @@ for i in range(20):
     col = i % 5
     ax[row, col].imshow(pair[0].reshape((28, 28)), cmap='gray')
     ax[row, col].axis("off")
-    ax[row, col].set_title(str(pair[1]))
+    ax[row, col].set_title("Prediction: "+pair[1])
 
 fig.tight_layout()
+plt.title("Correct Classifications Examples")
 plt.savefig(fname = "figures/1-5-correct-classifications.png", format = "png")
 
 fig, ax = plt.subplots(nrows=2, ncols=5, dpi=200)
@@ -238,9 +271,10 @@ for i in range(10):
     col = i % 5
     ax[row, col].imshow(pair[0].reshape((28, 28)), cmap='gray')
     ax[row, col].axis("off")
-    ax[row, col].set_title(str(pair[1]))
+    ax[row, col].set_title("Prediction: "+pair[1])
 
 fig.tight_layout()
+plt.title("Incorrect Classifications Examples")
 plt.savefig(fname = "figures/1-5-incorrect-classifications.png", format = "png")
 
 plt.show()
