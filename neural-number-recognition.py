@@ -261,7 +261,6 @@ for i in range(20):
     ax[row, col].set_title("Prediction: "+pair[1])
 
 fig.tight_layout()
-plt.title("Correct Classifications Examples")
 plt.savefig(fname = "figures/1-5-correct-classifications.png", format = "png")
 
 fig, ax = plt.subplots(nrows=2, ncols=5, dpi=200)
@@ -274,7 +273,6 @@ for i in range(10):
     ax[row, col].set_title("Prediction: "+pair[1])
 
 fig.tight_layout()
-plt.title("Incorrect Classifications Examples")
 plt.savefig(fname = "figures/1-5-incorrect-classifications.png", format = "png")
 
 plt.show()
