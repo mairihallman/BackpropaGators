@@ -247,29 +247,29 @@ plt.show()
 
 ## 1-6
 
-weights_and_biases = learning_curve['weights and biases']
+## 1-6
+
 o_vec = np.zeros(shape = (10, 28, 28))
 for digit in range(10):
     for pixel in range(28*28):
-        o_vec[digit, pixel // 28, pixel % 28] = weights_and_biases[-1][0][pixel][digit]
+        o_vec[digit, pixel // 28, pixel % 28] = w[pixel][digit]
 
-l = np.reshape(weights_and_biases[-1][0], newshape = 10*28*28)
-limit = max([abs(max(l)), abs(min(l))])
 nrows = 2
 ncols = 5
 fig, ax = plt.subplots(nrows = nrows, ncols = ncols, dpi = 200)
 
 for digit in range(10):
-    ax[digit // ncols][digit % ncols].imshow(
+    myplot = ax[digit // ncols][digit % ncols]
+    myplot.imshow(
         o_vec[digit],
-        cmap = "coolwarm",
-        vmin = -limit,
-        vmax = limit
+        cmap = "coolwarm"
     )
-    ax[digit // ncols][digit % ncols].axis("off")
+    myplot.set_title(digit)
+    myplot.axis("off")
 
 fig.tight_layout()
 plt.savefig(fname = "figures/network-weights.png", format = "png")
+plt.show()
 
 ## Imports for later parts
 
